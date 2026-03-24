@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pluga Bet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>בדוק את עצמך</h1>
+            <p class="question">האם אתה יונתי?</p>
+            
+            <div class="input-section">
+                <label for="nameInput">תשובתך:</label>
+                <input 
+                    type="text" 
+                    id="nameInput" 
+                    placeholder="הכנס תשובה..."
+                    autocomplete="off"
+                >
+                <button onclick="checkAnswer()">בדוק</button>
+            </div>
+            
+            <div id="result" class="result hidden"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

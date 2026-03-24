@@ -1,0 +1,140 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 500px;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 32px;
+}
+
+.question {
+    color: #666;
+    font-size: 22px;
+    margin-bottom: 30px;
+    font-weight: 500;
+}
+
+.input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+label {
+    color: #555;
+    font-weight: 600;
+    text-align: right;
+}
+
+input[type="text"] {
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+    text-align: right;
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+button {
+    padding: 12px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.result {
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: 600;
+    animation: slideIn 0.3s ease-out;
+}
+
+.result.hidden {
+    display: none;
+}
+
+.result.pity {
+    background: #ffe5e5;
+    color: #d32f2f;
+    border-left: 5px solid #d32f2f;
+    text-align: right;
+}
+
+.result.good {
+    background: #e5f5e5;
+    color: #388e3c;
+    border-left: 5px solid #388e3c;
+    text-align: right;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 600px) {
+    .card {
+        padding: 25px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .question {
+        font-size: 18px;
+    }
+}
