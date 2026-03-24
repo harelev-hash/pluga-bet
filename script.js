@@ -76,17 +76,27 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load all responses and display in table
 async function loadResponses() {
     try {
+        console.log('📡 Fetching responses...');
         const response = await fetch('/api/responses?limit=50');
-        if (!response.ok) throw new Error('Failed to fetch responses');
+        console.log('📝 Response status:', response.status);
+        
+        if (!response.ok) {
+            console.error('❌ Response not OK:', response.statusText);
+            throw new Error('Failed to fetch responses');
+        }
         
         const result = await response.json();
+        console.log('✅ Got data:', result);
+        
         const tbody = document.getElementById('responsesTableBody');
         
         if (!result.data || result.data.length === 0) {
+            console.log('ℹ️ No data found');
             tbody.innerHTML = '<tr><td colspan="4" class="text-center">אין תשובות עדיין</td></tr>';
             return;
         }
         
+        console.log('📊 Rendering', result.data.length, 'rows');
         tbody.innerHTML = result.data.map(row => `
             <tr>
                 <td>${row.id}</td>
@@ -108,8 +118,11 @@ async function loadResponses() {
                 </td>
             </tr>
         `).join('');
+        console.log('✨ Table rendered!');
     } catch (error) {
-        console.error('Error loading responses:', error);
+        console.error('🔴 Error loading responses:', error);
+        const tbody = document.getElementById('responsesTableBody');
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center">שגיאה בטעינה: ${error.message}</td></tr>`;
     }
 }
 
