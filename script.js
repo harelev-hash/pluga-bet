@@ -171,4 +171,3 @@ async function toggleUpdateMode(id, currentAnswer) {
         alert('שגיאה בעדכון. נסה שוב.');
     }
 }
-});
