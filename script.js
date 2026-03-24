@@ -66,6 +66,96 @@ async function updateStats() {
 // Load stats on page load
 document.addEventListener('DOMContentLoaded', () => {
     updateStats();
+    loadResponses();
     // Refresh stats every 5 seconds
     setInterval(updateStats, 5000);
+    // Refresh responses every 10 seconds
+    setInterval(loadResponses, 10000);
+});
+
+// Load all responses and display in table
+async function loadResponses() {
+    try {
+        const response = await fetch('/api/responses?limit=50');
+        if (!response.ok) throw new Error('Failed to fetch responses');
+        
+        const result = await response.json();
+        const tbody = document.getElementById('responsesTableBody');
+        
+        if (!result.data || result.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">אין תשובות עדיין</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = result.data.map(row => `
+            <tr>
+                <td>${row.id}</td>
+                <td>
+                    <span class="answer-${row.answer}">
+                        ${row.answer === 'yes' ? 'כן' : 'לא'}
+                    </span>
+                </td>
+                <td>${new Date(row.created_at).toLocaleString('he-IL')}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-update" onclick="toggleUpdateMode(${row.id}, '${row.answer}')">
+                            ${row.answer === 'yes' ? 'שנה ללא' : 'שנה לכן'}
+                        </button>
+                        <button class="btn-delete" onclick="deleteResponse(${row.id})">
+                            מחק
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading responses:', error);
+    }
+}
+
+// Delete a response
+async function deleteResponse(id) {
+    if (!confirm('האם אתה בטוח שאתה רוצה למחוק את התשובה הזאת?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/answer/${id}`, {
+            method: 'DELETE',
+        });
+        
+        if (!response.ok) throw new Error('Failed to delete response');
+        
+        // Refresh table and stats
+        loadResponses();
+        updateStats();
+    } catch (error) {
+        console.error('Error deleting response:', error);
+        alert('שגיאה במחיקה. נסה שוב.');
+    }
+}
+
+// Update a response
+async function toggleUpdateMode(id, currentAnswer) {
+    const newAnswer = currentAnswer === 'yes' ? 'no' : 'yes';
+    
+    try {
+        const response = await fetch(`/api/answer/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ answer: newAnswer }),
+        });
+        
+        if (!response.ok) throw new Error('Failed to update response');
+        
+        // Refresh table and stats
+        loadResponses();
+        updateStats();
+    } catch (error) {
+        console.error('Error updating response:', error);
+        alert('שגיאה בעדכון. נסה שוב.');
+    }
+}
 });

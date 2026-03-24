@@ -63,4 +63,69 @@ async function getStats() {
   }
 }
 
-module.exports = { saveAnswer, getStats };
+// Delete answer from database
+async function deleteAnswer(id) {
+  try {
+    const { data, error } = await supabase
+      .from('responses')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting answer:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error('Exception deleting answer:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// Update answer in database
+async function updateAnswer(id, newAnswer) {
+  try {
+    const { data, error } = await supabase
+      .from('responses')
+      .update({ answer: newAnswer })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating answer:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error('Exception updating answer:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// Get all responses
+async function getAllResponses(limit = 50, offset = 0) {
+  try {
+    const { data, error, count } = await supabase
+      .from('responses')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data,
+      total: count,
+      limit,
+      offset,
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+module.exports = { saveAnswer, getStats, deleteAnswer, updateAnswer, getAllResponses };
