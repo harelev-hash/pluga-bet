@@ -40,6 +40,13 @@ h1 {
     font-weight: 500;
 }
 
+.hint {
+    color: #999;
+    font-size: 14px;
+    margin-bottom: 25px;
+    font-style: italic;
+}
+
 .input-section {
     display: flex;
     justify-content: center;
