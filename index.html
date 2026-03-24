@@ -14,12 +14,31 @@
             
             <div class="input-section">
                 <div class="button-group">
-                    <button class="choice-btn yes-btn" onclick="checkAnswer('yes')">כן</button>
-                    <button class="choice-btn no-btn" onclick="checkAnswer('no')">לא</button>
+                    <button class="choice-btn yes-btn" id="yesBtn" onclick="checkAnswer('yes')">כן</button>
+                    <button class="choice-btn no-btn" id="noBtn" onclick="checkAnswer('no')">לא</button>
                 </div>
             </div>
             
             <div id="result" class="result hidden"></div>
+            <div id="loading" class="loading hidden">שומר לקובץ...</div>
+        </div>
+
+        <div class="stats-card">
+            <h2>סטטיסטיקה</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">סה"כ תשובות:</span>
+                    <span class="stat-value" id="totalStats">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">כן:</span>
+                    <span class="stat-value stat-yes" id="yesStats">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">לא:</span>
+                    <span class="stat-value stat-no" id="noStats">-</span>
+                </div>
+            </div>
         </div>
     </div>
 

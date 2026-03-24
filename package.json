@@ -1,0 +1,20 @@
+{
+  "name": "pluga-bet",
+  "version": "1.0.0",
+  "description": "A small interactive website with database",
+  "main": "api/handler.js",
+  "scripts": {
+    "dev": "node api/handler.js",
+    "build": "echo 'Build complete'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
