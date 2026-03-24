@@ -13,14 +13,10 @@
             <p class="question">האם אתה יונתי?</p>
             
             <div class="input-section">
-                <label for="nameInput">תשובתך:</label>
-                <input 
-                    type="text" 
-                    id="nameInput" 
-                    placeholder="הכנס תשובה..."
-                    autocomplete="off"
-                >
-                <button onclick="checkAnswer()">בדוק</button>
+                <div class="button-group">
+                    <button class="choice-btn yes-btn" onclick="checkAnswer('yes')">כן</button>
+                    <button class="choice-btn no-btn" onclick="checkAnswer('no')">לא</button>
+                </div>
             </div>
             
             <div id="result" class="result hidden"></div>

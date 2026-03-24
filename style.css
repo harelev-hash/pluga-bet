@@ -42,29 +42,56 @@ h1 {
 
 .input-section {
     display: flex;
-    flex-direction: column;
-    gap: 15px;
+    justify-content: center;
     margin-bottom: 30px;
 }
 
-label {
-    color: #555;
-    font-weight: 600;
-    text-align: right;
+.button-group {
+    display: flex;
+    gap: 20px;
+    flex-direction: row-reverse;
 }
 
-input[type="text"] {
-    padding: 12px 15px;
+.choice-btn {
+    padding: 12px 30px;
+    background: #f0f0f0;
+    color: #333;
     border: 2px solid #ddd;
     border-radius: 8px;
-    font-size: 16px;
-    transition: border-color 0.3s;
-    text-align: right;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 100px;
 }
 
-input[type="text"]:focus {
-    outline: none;
-    border-color: #667eea;
+.choice-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.choice-btn:active {
+    transform: translateY(0);
+}
+
+.yes-btn {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    color: #1976d2;
+}
+
+.yes-btn:hover {
+    background: #bbdefb;
+}
+
+.no-btn {
+    background: #f3e5f5;
+    border-color: #9c27b0;
+    color: #7b1fa2;
+}
+
+.no-btn:hover {
+    background: #e1bee7;
 }
 
 button {
