@@ -4,7 +4,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  transpilePackages: ['@supabase/ssr', 'cookie'],
+  turbopack: {
+    resolveAlias: {
+      cookie: './node_modules/cookie/dist/index.js',
+    },
+  },
 };
 
 export default nextConfig;
