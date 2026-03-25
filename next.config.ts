@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  transpilePackages: ['@supabase/ssr', 'cookie'],
 };
 
 export default nextConfig;
