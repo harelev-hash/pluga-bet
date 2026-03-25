@@ -16,8 +16,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('id', user.id)
     .single()
 
-  // New user awaiting admin approval
-  if (appUser && !appUser.is_active) redirect('/pending')
+  // No app_users record or not yet activated → pending
+  if (!appUser || !appUser.is_active) redirect('/pending')
 
   const displayName = appUser?.full_name ?? user.email ?? 'משתמש'
   const roleLabel = appUser?.role ? ROLE_LABELS[appUser.role as UserRole] : ''
