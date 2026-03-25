@@ -211,26 +211,28 @@ export interface OperationalSummary {
   department?: Department | null
 }
 
+type R = []
+
 // Database type for Supabase client
 export interface Database {
   public: {
     Tables: {
-      departments: { Row: Department; Insert: Omit<Department, 'id' | 'created_at'>; Update: Partial<Omit<Department, 'id' | 'created_at'>> }
-      app_users: { Row: AppUser; Insert: Omit<AppUser, 'created_at' | 'updated_at'>; Update: Partial<Omit<AppUser, 'id' | 'created_at'>> }
-      soldiers: { Row: Soldier; Insert: Omit<Soldier, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<Soldier, 'id' | 'created_at'>> }
-      reserve_periods: { Row: ReservePeriod; Insert: Omit<ReservePeriod, 'id' | 'created_at'>; Update: Partial<Omit<ReservePeriod, 'id' | 'created_at'>> }
-      daily_attendance: { Row: DailyAttendance; Insert: Omit<DailyAttendance, 'id' | 'recorded_at'>; Update: Partial<Omit<DailyAttendance, 'id'>> }
-      tracking_events: { Row: TrackingEvent; Insert: Omit<TrackingEvent, 'id' | 'created_at'>; Update: Partial<Omit<TrackingEvent, 'id' | 'created_at'>> }
-      tracking_entries: { Row: TrackingEntry; Insert: Omit<TrackingEntry, 'id' | 'created_at'>; Update: Partial<Omit<TrackingEntry, 'id'>> }
-      equipment_types: { Row: EquipmentType; Insert: Omit<EquipmentType, 'id'>; Update: Partial<Omit<EquipmentType, 'id'>> }
-      equipment_items: { Row: EquipmentItem; Insert: Omit<EquipmentItem, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<EquipmentItem, 'id' | 'created_at'>> }
-      soldier_equipment: { Row: SoldierEquipment; Insert: Omit<SoldierEquipment, 'id'>; Update: Partial<Omit<SoldierEquipment, 'id'>> }
-      equipment_transactions: { Row: EquipmentTransaction; Insert: Omit<EquipmentTransaction, 'id' | 'action_date' | 'created_at'>; Update: Partial<Omit<EquipmentTransaction, 'id'>> }
-      melm_requests: { Row: MelmRequest; Insert: Omit<MelmRequest, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<MelmRequest, 'id' | 'created_at'>> }
-      melm_items: { Row: MelmItem; Insert: Omit<MelmItem, 'id'>; Update: Partial<Omit<MelmItem, 'id'>> }
-      guard_posts: { Row: GuardPost; Insert: Omit<GuardPost, 'id'>; Update: Partial<Omit<GuardPost, 'id'>> }
-      operational_assignments: { Row: OperationalAssignment; Insert: Omit<OperationalAssignment, 'id' | 'created_at'>; Update: Partial<Omit<OperationalAssignment, 'id' | 'created_at'>> }
-      operational_summaries: { Row: OperationalSummary; Insert: Omit<OperationalSummary, 'id' | 'created_at'>; Update: Partial<Omit<OperationalSummary, 'id' | 'created_at'>> }
+      departments: { Row: Department; Insert: Omit<Department, 'id' | 'created_at'>; Update: Partial<Omit<Department, 'id' | 'created_at'>>; Relationships: R }
+      app_users: { Row: AppUser; Insert: Omit<AppUser, 'created_at' | 'updated_at'>; Update: Partial<Omit<AppUser, 'id' | 'created_at'>>; Relationships: R }
+      soldiers: { Row: Soldier; Insert: Omit<Soldier, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<Soldier, 'id' | 'created_at'>>; Relationships: R }
+      reserve_periods: { Row: ReservePeriod; Insert: Omit<ReservePeriod, 'id' | 'created_at'>; Update: Partial<Omit<ReservePeriod, 'id' | 'created_at'>>; Relationships: R }
+      daily_attendance: { Row: DailyAttendance; Insert: Omit<DailyAttendance, 'id' | 'recorded_at'>; Update: Partial<Omit<DailyAttendance, 'id'>>; Relationships: R }
+      tracking_events: { Row: TrackingEvent; Insert: Omit<TrackingEvent, 'id' | 'created_at'>; Update: Partial<Omit<TrackingEvent, 'id' | 'created_at'>>; Relationships: R }
+      tracking_entries: { Row: TrackingEntry; Insert: Omit<TrackingEntry, 'id' | 'created_at'>; Update: Partial<Omit<TrackingEntry, 'id'>>; Relationships: R }
+      equipment_types: { Row: EquipmentType; Insert: Omit<EquipmentType, 'id'>; Update: Partial<Omit<EquipmentType, 'id'>>; Relationships: R }
+      equipment_items: { Row: EquipmentItem; Insert: Omit<EquipmentItem, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<EquipmentItem, 'id' | 'created_at'>>; Relationships: R }
+      soldier_equipment: { Row: SoldierEquipment; Insert: Omit<SoldierEquipment, 'id'>; Update: Partial<Omit<SoldierEquipment, 'id'>>; Relationships: R }
+      equipment_transactions: { Row: EquipmentTransaction; Insert: Omit<EquipmentTransaction, 'id' | 'action_date' | 'created_at'>; Update: Partial<Omit<EquipmentTransaction, 'id'>>; Relationships: R }
+      melm_requests: { Row: MelmRequest; Insert: Omit<MelmRequest, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<MelmRequest, 'id' | 'created_at'>>; Relationships: R }
+      melm_items: { Row: MelmItem; Insert: Omit<MelmItem, 'id'>; Update: Partial<Omit<MelmItem, 'id'>>; Relationships: R }
+      guard_posts: { Row: GuardPost; Insert: Omit<GuardPost, 'id'>; Update: Partial<Omit<GuardPost, 'id'>>; Relationships: R }
+      operational_assignments: { Row: OperationalAssignment; Insert: Omit<OperationalAssignment, 'id' | 'created_at'>; Update: Partial<Omit<OperationalAssignment, 'id' | 'created_at'>>; Relationships: R }
+      operational_summaries: { Row: OperationalSummary; Insert: Omit<OperationalSummary, 'id' | 'created_at'>; Update: Partial<Omit<OperationalSummary, 'id' | 'created_at'>>; Relationships: R }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
