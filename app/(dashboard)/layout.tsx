@@ -12,9 +12,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: appUser } = await supabase
     .from('app_users')
-    .select('full_name, role')
+    .select('full_name, role, is_active')
     .eq('id', user.id)
     .single()
+
+  // New user awaiting admin approval
+  if (appUser && !appUser.is_active) redirect('/pending')
 
   const displayName = appUser?.full_name ?? user.email ?? 'משתמש'
   const roleLabel = appUser?.role ? ROLE_LABELS[appUser.role as UserRole] : ''

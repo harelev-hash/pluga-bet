@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function proxy(request: NextRequest) {
   const isLoginPage = request.nextUrl.pathname === '/login'
   const isAuthCallback = request.nextUrl.pathname.startsWith('/auth/')
-  const isPublic = isLoginPage || isAuthCallback
+  const isPending = request.nextUrl.pathname === '/pending'
+  const isPublic = isLoginPage || isAuthCallback || isPending
 
   // Check for Supabase session cookie (no @supabase/ssr dependency)
   const hasSession = request.cookies.getAll().some(
