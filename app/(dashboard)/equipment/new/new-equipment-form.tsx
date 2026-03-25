@@ -70,7 +70,7 @@ export default function NewEquipmentForm({ types }: { types: EquipmentType[] }) 
         {selectedType?.is_serialized ? (
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-1">מספר סידורי</label>
-            <input value={form.serial_number} onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))} className="input font-mono" placeholder="מ\"ס" />
+            <input value={form.serial_number} onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))} className="input font-mono" placeholder="מס'" />
           </div>
         ) : (
           <div>

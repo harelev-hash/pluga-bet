@@ -128,7 +128,7 @@ export default function SoldierForm({ soldier, departments, isNew }: Props) {
               value={form.role_in_unit}
               onChange={e => setForm(f => ({ ...f, role_in_unit: e.target.value }))}
               className="input"
-              placeholder="לוחם, קמ"ן, נהג..."
+              placeholder="לוחם, קמ&quot;ן, נהג..."
             />
           </Field>
         </div>
