@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     resolveAlias: {
-      cookie: './node_modules/cookie/dist/index.js',
+      cookie: './lib/cookie-shim.js',
     },
   },
 };
