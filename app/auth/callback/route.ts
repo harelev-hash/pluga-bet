@@ -25,6 +25,23 @@ export async function GET(request: NextRequest) {
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: existing } = await supabase
+          .from('app_users')
+          .select('id')
+          .eq('id', user.id)
+          .single()
+        if (!existing) {
+          await supabase.from('app_users').insert({
+            id: user.id,
+            email: user.email ?? '',
+            full_name: user.user_metadata?.full_name ?? null,
+            role: 'viewer',
+            is_active: false,
+          })
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
