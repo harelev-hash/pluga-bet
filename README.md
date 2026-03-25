@@ -1,125 +1,36 @@
-# Pluga Bet - A Voting Website with Database
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-פרויקט אינטרקטיבי שמעביר הערות למסד נתונים ושומר סטטיסטיקות.
+## Getting Started
 
-## 🚀 התקנה והגדרה
-
-### 1️⃣ **הגדר את Supabase**
-
-1. היכנס ל-[supabase.com](https://supabase.com)
-2. יצור פרויקט חדש
-3. בחר את ה-region הקרוב אליך
-4. או בעמוד הפרויקט, הולך ל-**SQL Editor** ומריץ את ה-SQL הבא:
-
-```sql
-CREATE TABLE responses (
-  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  answer TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-5. עכשיו הולך ל-**Settings > API** וקבל את:
-   - `SUPABASE_URL` (Project URL)
-   - `SUPABASE_ANON_KEY` (Anon Key)
-
-### 2️⃣ **Vercel Deployment**
-
-#### **עם GitHub (מומלץ):**
-
-1. דחוף את הפרויקט לGitHub
-2. היכנס ל-[vercel.com](https://vercel.com)
-3. בחר **Import Project** וחבר את ה-GitHub repo
-4. ב-**Environment Variables**, הוסף:
-   - `SUPABASE_URL`: הערך מ-Supabase
-   - `SUPABASE_KEY`: ה-Anon Key
-5. **Deploy!** ✨
-
-#### **בעזרת CLI:**
+First, run the development server:
 
 ```bash
-# התקן Vercel CLI
-npm install -g vercel
-
-# דחוף לVercel
-vercel
-```
-
-### 3️⃣ **Local Development**
-
-```bash
-# התקן dependencies
-npm install
-
-# עדכן את .env.local עם הערכים של Supabase שלך
-# Edit .env.local
-
-# הרץ את הserver
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-ואז תקבל קישור ל-`http://localhost:3000`
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
----
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## 📚 טכנולוגיה
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-- **Frontend**: HTML, CSS, JavaScript
-- **Backend**: Node.js + Express
-- **Database**: Supabase (PostgreSQL)
-- **Hosting**: Vercel
+## Learn More
 
----
+To learn more about Next.js, take a look at the following resources:
 
-## 📋 מבנה הפרויקט
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-```
-pluga-bet/
-├── index.html           # Frontend HTML
-├── style.css            # Styles
-├── script.js            # Frontend JavaScript
-├── api/
-│   ├── handler.js       # Express server
-│   └── db.js            # Supabase integration
-├── package.json         # Dependencies
-├── .env.local          # Environment variables (local)
-└── .gitignore          # Git ignore
-```
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
----
+## Deploy on Vercel
 
-## 🔒 אבטחה
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-- ✅ API Key מאוחסן בטוח בـ Vercel Environment Variables
-- ✅ Database queries מתבצעות רק בـ Backend
-- ✅ Frontend לא יש גישה ישירה לDatabase
-
----
-
-## 🎯 API Endpoints
-
-### `POST /api/answer`
-שומר תשובה חדשה
-
-```json
-{
-  "answer": "yes" // או "no"
-}
-```
-
-### `GET /api/stats`
-חוזר סטטיסטיקות
-
-```json
-{
-  "total": 123,
-  "yes": 45,
-  "no": 78
-}
-```
-
----
-
-## 📝 License
-
-ISC
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
