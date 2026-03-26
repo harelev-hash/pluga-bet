@@ -114,7 +114,7 @@ export default function OpsGrid({ posts, soldiers, date, assignments: initial }:
                       >
                         <option value="">— פנוי —</option>
                         {eligibleSoldiers(post).map(s => (
-                          <option key={s.id} value={s.id}>{s.full_name} ({s.rank})</option>
+                          <option key={s.id} value={s.id}>{s.full_name}</option>
                         ))}
                       </select>
                     </td>

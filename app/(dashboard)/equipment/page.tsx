@@ -106,7 +106,7 @@ export default async function EquipmentPage() {
                 return (
                   <tr key={a.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-800">
-                      {a.soldier?.rank} {a.soldier?.full_name ?? '—'}
+                      {a.soldier?.full_name ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-slate-700">{itemName}</td>
                     <td className="px-4 py-3 text-xs text-slate-500">

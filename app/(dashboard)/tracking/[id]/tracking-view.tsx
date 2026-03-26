@@ -97,10 +97,10 @@ export default function TrackingView({ event, entries: initial, departments }: P
     ``,
     `👥 ביצעו (${done.length} מתוך ${relevant}):`,
     ``,
-    ...done.map(e => `• ${e.soldier?.rank ?? ''} ${e.soldier?.full_name ?? '—'} | ${e.soldier?.id_number ?? ''}`),
+    ...done.map(e => `• ${e.soldier?.full_name ?? '—'} | ${e.soldier?.id_number ?? ''}`),
     ...(exempt.length > 0 ? [
       ``, `⛔ לא רלוונטי (${exempt.length}):`, ``,
-      ...exempt.map(e => `• ${e.soldier?.rank ?? ''} ${e.soldier?.full_name ?? '—'}`),
+      ...exempt.map(e => `• ${e.soldier?.full_name ?? '—'}`),
     ] : []),
   ].join('\n')
 
@@ -260,7 +260,7 @@ export default function TrackingView({ event, entries: initial, departments }: P
                 : status === 'exempt' ? 'text-red-700'
                 : 'text-slate-700'
               }`}>
-                {entry.soldier?.rank} {entry.soldier?.full_name ?? '—'}
+                {entry.soldier?.full_name ?? '—'}
               </p>
               <p className="text-xs text-slate-400 mt-0.5 font-mono">{entry.soldier?.id_number}</p>
             </button>

@@ -334,7 +334,7 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
                         {row.soldier ? (
                           <span className="flex items-center gap-1.5 text-green-700 text-xs font-medium group">
                             <UserCheck className="w-3.5 h-3.5 shrink-0" />
-                            {row.soldier.rank} {row.soldier.full_name}
+                            {row.soldier.full_name}
                             <button
                               onClick={() => updateSoldier(row.kitNumber, null)}
                               className="text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -487,7 +487,7 @@ function SoldierPicker({
               className="w-full text-right px-3 py-2 text-xs hover:bg-blue-50 transition-colors flex items-center gap-2"
             >
               <UserCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-              <span className="font-medium text-slate-700">{s.rank} {s.full_name}</span>
+              <span className="font-medium text-slate-700">{s.full_name}</span>
               <span className="text-slate-400 mr-auto">{s.id_number}</span>
             </button>
           ))}

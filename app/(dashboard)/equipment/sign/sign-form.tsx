@@ -174,7 +174,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
         >
           <option value="">בחר חייל...</option>
           {soldiers.map(s => (
-            <option key={s.id} value={s.id}>{s.rank} {s.full_name}</option>
+            <option key={s.id} value={s.id}>{s.full_name}</option>
           ))}
         </select>
 

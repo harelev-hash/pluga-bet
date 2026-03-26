@@ -164,7 +164,7 @@ function SoldierCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-slate-800 text-sm">
-            {soldier.rank} {soldier.full_name}
+            {soldier.full_name}
           </p>
           {soldier.role_in_unit && (
             <p className="text-xs text-slate-400">{soldier.role_in_unit}</p>

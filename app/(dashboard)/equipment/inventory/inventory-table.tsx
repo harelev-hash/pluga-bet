@@ -210,7 +210,7 @@ export default function InventoryTable({ types, items, assignments }: Props) {
                             {assignedDetails.map((d, i) => (
                               <tr key={i} className="hover:bg-blue-50/50">
                                 <td className="px-3 py-2 font-medium text-slate-700">
-                                  {d.soldierRank} {d.soldierName}
+                                  {d.soldierName}
                                 </td>
                                 {isSerialized && <td className="px-3 py-2 font-mono text-slate-500">{d.serial ?? '—'}</td>}
                                 {!isSerialized && <td className="px-3 py-2 text-slate-600">{(d as any).quantity}</td>}
