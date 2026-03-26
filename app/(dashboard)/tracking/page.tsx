@@ -7,7 +7,7 @@ export default async function TrackingPage() {
   const [{ data: events }, { data: currentPeriod }, { data: soldiers }] = await Promise.all([
     supabase
       .from('tracking_events')
-      .select('id, name, description, event_date, entries:tracking_entries(id, status)')
+      .select('id, name, description, event_date, type, entries:tracking_entries(id, status)')
       .order('event_date', { ascending: false }),
     supabase.from('reserve_periods').select('id, name').eq('is_current', true).maybeSingle(),
     supabase.from('soldiers').select('id').eq('is_active', true),

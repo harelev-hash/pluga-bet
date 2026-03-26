@@ -15,7 +15,7 @@ export default async function TrackingEventPage({ params }: Props) {
   const [{ data: event, error }, { data: entries }, { data: departments }] = await Promise.all([
     supabase
       .from('tracking_events')
-      .select('id, name, description, event_date, period_id')
+      .select('id, name, description, event_date, period_id, type')
       .eq('id', parseInt(id))
       .single(),
     supabase
@@ -38,7 +38,12 @@ export default async function TrackingEventPage({ params }: Props) {
           <ArrowRight className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">{event.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-800">{event.name}</h1>
+            {(event as any).type && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{(event as any).type}</span>
+            )}
+          </div>
           <p className="text-slate-500 text-sm mt-0.5">
             {formatDate(event.event_date)}
             {event.description && ` · ${event.description}`}

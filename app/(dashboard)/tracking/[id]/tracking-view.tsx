@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Check, X, Clock, Copy, MessageCircle, Search } from 'lucide-react'
+import { Check, X, Clock, Copy, MessageCircle, Search, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
 
 type Status = 'pending' | 'done' | 'exempt'
 type Filter = 'all' | Status
@@ -19,6 +20,7 @@ interface Event {
   name: string
   event_date: string
   description: string | null
+  type: string | null
 }
 
 interface Department { id: number; name: string }
@@ -32,12 +34,30 @@ interface Props {
 const NEXT: Record<Status, Status> = { pending: 'done', done: 'exempt', exempt: 'pending' }
 
 export default function TrackingView({ event, entries: initial, departments }: Props) {
+  const router = useRouter()
   const [overrides, setOverrides] = useState<Map<number, Status>>(new Map())
   const [busy, setBusy] = useState<Set<number>>(new Set())
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editForm, setEditForm] = useState({ name: event.name, description: event.description ?? '', event_date: event.event_date, type: event.type ?? '' })
+  const [isSaving, startSave] = useTransition()
+
+  const saveEdit = () => {
+    startSave(async () => {
+      const supabase = createClient()
+      await supabase.from('tracking_events').update({
+        name: editForm.name.trim(),
+        description: editForm.description.trim() || null,
+        event_date: editForm.event_date,
+        type: editForm.type.trim() || null,
+      }).eq('id', event.id)
+      setEditOpen(false)
+      router.refresh()
+    })
+  }
 
   const getStatus = (e: Entry): Status => overrides.get(e.id) ?? e.status
 
@@ -116,6 +136,71 @@ export default function TrackingView({ event, entries: initial, departments }: P
 
   return (
     <div className="space-y-4" dir="rtl">
+
+      {/* Edit panel */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <button
+          onClick={() => setEditOpen(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm"
+        >
+          <span className="flex items-center gap-2 text-slate-500">
+            <Pencil className="w-3.5 h-3.5" />
+            ערוך פרטי מעקב
+          </span>
+          {editOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+        </button>
+        {editOpen && (
+          <div className="border-t border-slate-100 p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-xs font-medium text-slate-600 mb-1">שם המעקב</label>
+                <input
+                  value={editForm.name}
+                  onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">סוג מעקב</label>
+                <input
+                  value={editForm.type}
+                  onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
+                  placeholder='למשל: ביקורת, הגעה, חיסון...'
+                  className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">תאריך</label>
+                <input
+                  type="date"
+                  value={editForm.event_date}
+                  onChange={e => setEditForm(f => ({ ...f, event_date: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-slate-600 mb-1">תיאור</label>
+                <input
+                  value={editForm.description}
+                  onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="פרטים נוספים..."
+                  className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setEditOpen(false)} className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700">ביטול</button>
+              <button
+                onClick={saveEdit}
+                disabled={isSaving || !editForm.name.trim()}
+                className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {isSaving ? 'שומר...' : 'שמור'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Progress + Export — TOP */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-3">

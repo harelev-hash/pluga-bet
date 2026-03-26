@@ -10,6 +10,7 @@ interface EventRow {
   name: string
   description: string | null
   event_date: string
+  type: string | null
   entries: { id: number; status: string }[]
 }
 
@@ -27,6 +28,7 @@ export default function TrackingList({ events, currentPeriodId, activeSoldierIds
     name: '',
     description: '',
     event_date: new Date().toISOString().split('T')[0],
+    type: '',
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -43,6 +45,7 @@ export default function TrackingList({ events, currentPeriodId, activeSoldierIds
           name: form.name.trim(),
           description: form.description.trim() || null,
           event_date: form.event_date,
+          type: form.type.trim() || null,
           period_id: currentPeriodId,
         })
         .select('id')
@@ -97,6 +100,15 @@ export default function TrackingList({ events, currentPeriodId, activeSoldierIds
               />
             </div>
             <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-slate-600 mb-1">סוג מעקב (רשות)</label>
+                <input
+                  value={form.type}
+                  onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+                  placeholder='ביקורת, הגעה, חיסון...'
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                />
+              </div>
               <div className="flex-1">
                 <label className="block text-xs font-medium text-slate-600 mb-1">תאריך</label>
                 <input
@@ -166,7 +178,12 @@ export default function TrackingList({ events, currentPeriodId, activeSoldierIds
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-800">{event.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-slate-800">{event.name}</p>
+                      {event.type && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shrink-0">{event.type}</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-400">
                       <span>{formatDate(event.event_date)}</span>
                       {event.description && <span className="truncate max-w-xs">{event.description}</span>}
