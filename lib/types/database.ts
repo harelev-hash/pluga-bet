@@ -2,7 +2,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type UserRole = 'sys_admin' | 'hr' | 'rsfp' | 'commander' | 'viewer'
 export type AttendanceStatus = 'present' | 'absent' | 'sick' | 'approved_absence' | 'vacation' | 'excused' | 'weekend'
-export type TrackingEntryStatus = 'open' | 'in_progress' | 'resolved'
+export type TrackingEntryStatus = 'pending' | 'done' | 'exempt'
 export type EquipmentCondition = 'serviceable' | 'needs_repair' | 'unserviceable'
 export type EquipmentAction = 'assign' | 'return' | 'transfer' | 'lost' | 'found' | 'condition_update'
 export type EquipmentOwnership = 'personal' | 'platoon' | 'battalion'
@@ -75,27 +75,24 @@ export interface DailyAttendance {
 
 export interface TrackingEvent {
   id: number
-  title: string
+  name: string
   description: string | null
   event_date: string
-  department_id: number | null
-  created_by: string | null
-  is_closed: boolean
+  period_id: number | null
   created_at: string
   // joined
-  department?: Department | null
   entries?: TrackingEntry[]
 }
 
 export interface TrackingEntry {
   id: number
   event_id: number
-  note: string
+  soldier_id: number
   status: TrackingEntryStatus
-  created_by: string | null
-  created_at: string
-  // joined (optional soldier reference)
-  soldier?: { id: number; full_name: string; rank: string } | null
+  notes: string | null
+  marked_at: string | null
+  // joined
+  soldier?: { id: number; full_name: string; rank: string; id_number: string } | null
 }
 
 export interface EquipmentType {

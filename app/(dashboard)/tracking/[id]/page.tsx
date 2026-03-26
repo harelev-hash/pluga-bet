@@ -2,68 +2,50 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
-import TrackingForm from './tracking-form'
-import TrackingEntries from './tracking-entries'
+import TrackingView from './tracking-view'
 
 interface Props {
   params: Promise<{ id: string }>
 }
 
-export default async function TrackingPage({ params }: Props) {
+export default async function TrackingEventPage({ params }: Props) {
   const { id } = await params
-  const isNew = id === 'new'
   const supabase = await createClient()
 
-  const [{ data: departments }, eventResult] = await Promise.all([
-    supabase.from('departments').select('*').order('display_order'),
-    isNew
-      ? { data: null, error: null }
-      : supabase
-          .from('tracking_events')
-          .select('*, department:departments(id,name)')
-          .eq('id', parseInt(id))
-          .single(),
+  const [{ data: event, error }, { data: entries }] = await Promise.all([
+    supabase
+      .from('tracking_events')
+      .select('id, name, description, event_date, period_id')
+      .eq('id', parseInt(id))
+      .single(),
+    supabase
+      .from('tracking_entries')
+      .select('id, soldier_id, status, notes, marked_at, soldier:soldiers(id, full_name, rank, id_number)')
+      .eq('event_id', parseInt(id))
+      .order('soldier_id'),
   ])
 
-  if (!isNew && eventResult.error) notFound()
-  const event = eventResult.data
+  if (error || !event) notFound()
 
-  let entries: any[] = []
-  if (!isNew && event) {
-    const { data } = await supabase
-      .from('tracking_entries')
-      .select('*, soldier:soldiers(id,full_name,rank)')
-      .eq('event_id', event.id)
-      .order('created_at', { ascending: false })
-    entries = data ?? []
-  }
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-4xl mx-auto space-y-5">
       <div className="flex items-center gap-3">
         <Link href="/tracking" className="text-slate-400 hover:text-slate-600 transition-colors">
           <ArrowRight className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
-            {isNew ? 'מעקב חדש' : event?.title}
-          </h1>
-          {!isNew && event && (
-            <p className="text-slate-500 text-sm">{formatDate(event.event_date)}</p>
-          )}
+          <h1 className="text-2xl font-bold text-slate-800">{event.name}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {formatDate(event.event_date)}
+            {event.description && ` · ${event.description}`}
+          </p>
         </div>
       </div>
 
-      <TrackingForm
-        event={event}
-        departments={departments ?? []}
-        isNew={isNew}
-      />
-
-      {!isNew && event && (
-        <TrackingEntries eventId={event.id} entries={entries} />
-      )}
+      <TrackingView event={event} entries={(entries ?? []) as any} />
     </div>
   )
 }
