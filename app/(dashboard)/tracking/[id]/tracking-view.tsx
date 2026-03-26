@@ -2,15 +2,16 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Check, X, Clock, Copy, MessageCircle, ChevronUp, ChevronDown } from 'lucide-react'
+import { Check, X, Clock, Copy, MessageCircle, Search } from 'lucide-react'
 
 type Status = 'pending' | 'done' | 'exempt'
+type Filter = 'all' | Status
 
 interface Entry {
   id: number
   soldier_id: number
   status: Status
-  soldier: { id: number; full_name: string; rank: string; id_number: string } | null
+  soldier: { id: number; full_name: string; rank: string; id_number: string; department_id: number | null } | null
 }
 
 interface Event {
@@ -20,20 +21,22 @@ interface Event {
   description: string | null
 }
 
+interface Department { id: number; name: string }
+
 interface Props {
   event: Event
   entries: Entry[]
+  departments: Department[]
 }
 
 const NEXT: Record<Status, Status> = { pending: 'done', done: 'exempt', exempt: 'pending' }
 
-type Filter = 'all' | Status
-
-export default function TrackingView({ event, entries: initial }: Props) {
+export default function TrackingView({ event, entries: initial, departments }: Props) {
   const [overrides, setOverrides] = useState<Map<number, Status>>(new Map())
   const [busy, setBusy] = useState<Set<number>>(new Set())
   const [filter, setFilter] = useState<Filter>('all')
-  const [sortByStatus, setSortByStatus] = useState(false)
+  const [search, setSearch] = useState('')
+  const [deptFilter, setDeptFilter] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
 
   const getStatus = (e: Entry): Status => overrides.get(e.id) ?? e.status
@@ -42,38 +45,48 @@ export default function TrackingView({ event, entries: initial }: Props) {
     if (busy.has(entry.id)) return
     const current = getStatus(entry)
     const next = NEXT[current]
-
     setOverrides(prev => new Map(prev).set(entry.id, next))
     setBusy(prev => new Set(prev).add(entry.id))
-
     const supabase = createClient()
     const { error } = await supabase
       .from('tracking_entries')
       .update({ status: next, marked_at: next !== 'pending' ? new Date().toISOString() : null })
       .eq('id', entry.id)
-
-    if (error) {
-      setOverrides(prev => new Map(prev).set(entry.id, current))
-    }
+    if (error) setOverrides(prev => new Map(prev).set(entry.id, current))
     setBusy(prev => { const s = new Set(prev); s.delete(entry.id); return s })
   }
 
   const all = initial.map(e => ({ ...e, current: getStatus(e) }))
-  const done = all.filter(e => e.current === 'done')
-  const exempt = all.filter(e => e.current === 'exempt')
+  const done    = all.filter(e => e.current === 'done')
+  const exempt  = all.filter(e => e.current === 'exempt')
   const pending = all.filter(e => e.current === 'pending')
   const relevant = all.length - exempt.length
   const pct = relevant > 0 ? Math.round((done.length / relevant) * 100) : 0
 
+  // Apply all filters
   let displayed = filter === 'all' ? all
     : filter === 'done' ? done
     : filter === 'exempt' ? exempt
     : pending
 
-  if (sortByStatus) {
-    const order: Record<Status, number> = { done: 0, pending: 1, exempt: 2 }
-    displayed = [...displayed].sort((a, b) => order[a.current] - order[b.current])
+  if (search.trim()) {
+    const q = search.trim()
+    displayed = displayed.filter(e =>
+      e.soldier?.full_name.includes(q) ||
+      e.soldier?.rank.includes(q) ||
+      e.soldier?.id_number.includes(q)
+    )
   }
+
+  if (deptFilter !== null) {
+    displayed = displayed.filter(e => e.soldier?.department_id === deptFilter)
+  }
+
+  // Sort: done first, then pending, then exempt
+  displayed = [...displayed].sort((a, b) => {
+    const order: Record<Status, number> = { done: 0, pending: 1, exempt: 2 }
+    return order[a.current] - order[b.current]
+  })
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -98,14 +111,15 @@ export default function TrackingView({ event, entries: initial }: Props) {
   }
 
   const handleWhatsApp = () => {
-    const text = buildMessage().slice(0, 2000)
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage().slice(0, 2000))}`, '_blank')
   }
 
   return (
     <div className="space-y-4" dir="rtl">
-      {/* Progress */}
+
+      {/* Progress + Export — TOP */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-3">
+        {/* Progress */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold text-slate-800">{done.length}</span>
@@ -116,54 +130,98 @@ export default function TrackingView({ event, entries: initial }: Props) {
           </div>
           <span className="text-lg font-bold text-blue-600">{pct}%</span>
         </div>
-        <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
           <div
-            className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
+            className="h-2.5 rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
             style={{ width: `${pct}%` }}
           />
         </div>
         <p className="text-xs text-slate-400 text-center">
           {done.length} ביצעו · {pending.length} ממתינים · {exempt.length} לא רלוונטי
         </p>
-      </div>
 
-      {/* Filter + sort */}
-      <div className="flex flex-wrap items-center gap-2">
-        {([
-          { key: 'all',     label: `הכל (${all.length})` },
-          { key: 'pending', label: `ממתין (${pending.length})` },
-          { key: 'done',    label: `ביצע (${done.length})` },
-          { key: 'exempt',  label: `לא רלוונטי (${exempt.length})` },
-        ] as { key: Filter; label: string }[]).map(({ key, label }) => (
+        {/* Export buttons */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
           <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              filter === key
-                ? key === 'done'    ? 'bg-green-600 text-white'
-                : key === 'exempt' ? 'bg-red-500 text-white'
-                : key === 'pending' ? 'bg-amber-500 text-white'
-                : 'bg-blue-600 text-white'
-                : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
-            }`}
+            onClick={handleCopy}
+            className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
           >
-            {label}
+            <Copy className="w-3.5 h-3.5" />
+            {copied ? '✓ הועתק' : 'העתק ללוח'}
           </button>
-        ))}
-        <button
-          onClick={() => setSortByStatus(v => !v)}
-          className={`mr-auto px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-            sortByStatus ? 'bg-slate-700 text-white border-slate-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-          }`}
-        >
-          {sortByStatus ? <ChevronUp className="w-3 h-3 inline ml-1" /> : <ChevronDown className="w-3 h-3 inline ml-1" />}
-          מיין לפי סטטוס
-        </button>
+          <button
+            onClick={handleWhatsApp}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            שלח לווטסאפ
+          </button>
+          <span className="text-xs text-slate-300">(מוגבל ל-2,000 תווים)</span>
+
+          {/* Preview */}
+          <details className="w-full text-xs text-slate-400 mt-1">
+            <summary className="cursor-pointer hover:text-slate-600">תצוגה מקדימה של ההודעה</summary>
+            <pre className="mt-2 p-3 bg-slate-50 rounded-lg whitespace-pre-wrap text-slate-600 leading-relaxed max-h-40 overflow-y-auto">
+              {buildMessage()}
+            </pre>
+          </details>
+        </div>
       </div>
 
-      {/* Tap hint */}
+      {/* Search + dept filter + status tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 space-y-3">
+        {/* Search + dept */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="חיפוש שם / מ.א..."
+              className="w-full border border-slate-200 rounded-lg pr-8 pl-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+          </div>
+          {departments.length > 0 && (
+            <select
+              value={deptFilter ?? ''}
+              onChange={e => setDeptFilter(e.target.value ? parseInt(e.target.value) : null)}
+              className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+            >
+              <option value="">כל המחלקות</option>
+              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          )}
+        </div>
+
+        {/* Status tabs */}
+        <div className="flex flex-wrap gap-2">
+          {([
+            { key: 'all',     label: `הכל (${all.length})` },
+            { key: 'pending', label: `ממתין (${pending.length})` },
+            { key: 'done',    label: `ביצע (${done.length})` },
+            { key: 'exempt',  label: `לא רלוונטי (${exempt.length})` },
+          ] as { key: Filter; label: string }[]).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                filter === key
+                  ? key === 'done'    ? 'bg-green-600 text-white'
+                  : key === 'exempt'  ? 'bg-red-500 text-white'
+                  : key === 'pending' ? 'bg-amber-500 text-white'
+                  : 'bg-blue-600 text-white'
+                  : 'bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Hint */}
       <p className="text-xs text-slate-400 px-1">
-        לחץ על חייל לסימון: <span className="text-amber-500 font-medium">ממתין</span> → <span className="text-green-600 font-medium">ביצע</span> → <span className="text-red-500 font-medium">לא רלוונטי</span> → ממתין
+        לחץ: <span className="text-amber-500 font-medium">ממתין</span> → <span className="text-green-600 font-medium">ביצע</span> → <span className="text-red-500 font-medium">לא רלוונטי</span> → ממתין
       </p>
 
       {/* Soldier grid */}
@@ -177,7 +235,7 @@ export default function TrackingView({ event, entries: initial }: Props) {
               onClick={() => tap(entry)}
               disabled={isBusy}
               className={`
-                relative rounded-xl p-3 text-right transition-all active:scale-95 border select-none
+                rounded-xl p-3 text-right transition-all active:scale-95 border select-none
                 ${status === 'done'
                   ? 'bg-green-50 border-green-200 hover:bg-green-100'
                   : status === 'exempt'
@@ -188,17 +246,17 @@ export default function TrackingView({ event, entries: initial }: Props) {
             >
               <div className="flex items-start justify-between gap-1 mb-2">
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-                  status === 'done'   ? 'bg-green-500 text-white'
+                  status === 'done'    ? 'bg-green-500 text-white'
                   : status === 'exempt' ? 'bg-red-400 text-white'
                   : 'bg-slate-200 text-slate-400'
                 }`}>
-                  {status === 'done'   ? <Check className="w-3.5 h-3.5" />
+                  {status === 'done'    ? <Check className="w-3.5 h-3.5" />
                    : status === 'exempt' ? <X className="w-3.5 h-3.5" />
                    : <Clock className="w-3.5 h-3.5" />}
                 </span>
               </div>
               <p className={`text-xs font-semibold leading-tight ${
-                status === 'done'   ? 'text-green-800'
+                status === 'done'    ? 'text-green-800'
                 : status === 'exempt' ? 'text-red-700'
                 : 'text-slate-700'
               }`}>
@@ -212,38 +270,10 @@ export default function TrackingView({ event, entries: initial }: Props) {
 
       {displayed.length === 0 && (
         <div className="bg-white rounded-xl border border-slate-100 py-10 text-center text-slate-400 text-sm">
-          אין חיילים בקטגוריה זו
+          {search || deptFilter ? 'לא נמצאו חיילים לפי החיפוש' : 'אין חיילים בקטגוריה זו'}
         </div>
       )}
 
-      {/* Export */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-3">
-        <p className="text-xs font-semibold text-slate-500">ייצוא דוח</p>
-        <div className="flex flex-wrap gap-3 items-center">
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Copy className="w-4 h-4" />
-            {copied ? '✓ הועתק' : 'העתק ללוח'}
-          </button>
-          <button
-            onClick={handleWhatsApp}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            שלח לווטסאפ
-          </button>
-          <span className="text-xs text-slate-400">(מוגבל ל-2,000 תווים)</span>
-        </div>
-        {/* Preview */}
-        <details className="text-xs text-slate-400">
-          <summary className="cursor-pointer hover:text-slate-600">תצוגה מקדימה של ההודעה</summary>
-          <pre className="mt-2 p-3 bg-slate-50 rounded-lg whitespace-pre-wrap text-slate-600 text-xs leading-relaxed max-h-48 overflow-y-auto">
-            {buildMessage()}
-          </pre>
-        </details>
-      </div>
     </div>
   )
 }

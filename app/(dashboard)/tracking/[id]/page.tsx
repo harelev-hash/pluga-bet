@@ -12,7 +12,7 @@ export default async function TrackingEventPage({ params }: Props) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: event, error }, { data: entries }] = await Promise.all([
+  const [{ data: event, error }, { data: entries }, { data: departments }] = await Promise.all([
     supabase
       .from('tracking_events')
       .select('id, name, description, event_date, period_id')
@@ -20,9 +20,10 @@ export default async function TrackingEventPage({ params }: Props) {
       .single(),
     supabase
       .from('tracking_entries')
-      .select('id, soldier_id, status, notes, marked_at, soldier:soldiers(id, full_name, rank, id_number)')
+      .select('id, soldier_id, status, notes, marked_at, soldier:soldiers(id, full_name, rank, id_number, department_id)')
       .eq('event_id', parseInt(id))
       .order('soldier_id'),
+    supabase.from('departments').select('id, name').order('display_order'),
   ])
 
   if (error || !event) notFound()
@@ -45,7 +46,7 @@ export default async function TrackingEventPage({ params }: Props) {
         </div>
       </div>
 
-      <TrackingView event={event} entries={(entries ?? []) as any} />
+      <TrackingView event={event} entries={(entries ?? []) as any} departments={departments ?? []} />
     </div>
   )
 }
