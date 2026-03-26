@@ -5,6 +5,9 @@ export type AttendanceStatus = 'present' | 'absent' | 'sick' | 'approved_absence
 export type TrackingEntryStatus = 'open' | 'in_progress' | 'resolved'
 export type EquipmentCondition = 'serviceable' | 'needs_repair' | 'unserviceable'
 export type EquipmentAction = 'assign' | 'return' | 'transfer' | 'lost' | 'found' | 'condition_update'
+export type EquipmentOwnership = 'personal' | 'platoon' | 'battalion'
+export type AssignmentStatus = 'active' | 'returned' | 'transferred' | 'lost'
+export type AssignmentCondition = 'serviceable' | 'worn' | 'damaged'
 export type MelmStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 export type MelmItemStatus = 'pending' | 'fulfilled' | 'partial' | 'rejected'
 
@@ -102,6 +105,55 @@ export interface EquipmentType {
   is_serialized: boolean
   unit: string | null
   description: string | null
+  ownership: EquipmentOwnership
+}
+
+export interface EquipmentTemplate {
+  id: number
+  name: string
+  description: string | null
+  is_active: boolean
+  created_at: string
+  // joined
+  items?: EquipmentTemplateItem[]
+}
+
+export interface EquipmentTemplateItem {
+  id: number
+  template_id: number
+  type_id: number
+  default_quantity: number
+  requires_attribute: boolean
+  attribute_options: string[]
+  sort_order: number
+  // joined
+  type?: EquipmentType
+}
+
+export interface EquipmentAssignment {
+  id: number
+  soldier_id: number
+  item_id: number | null
+  type_id: number | null
+  quantity: number
+  attribute: string | null
+  period_id: number | null
+  status: AssignmentStatus
+  condition_in: AssignmentCondition
+  condition_out: AssignmentCondition | null
+  signed_at: string
+  signed_by: string | null
+  returned_at: string | null
+  returned_by: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  // joined
+  soldier?: Soldier
+  item?: EquipmentItem | null
+  type?: EquipmentType | null
+  period?: ReservePeriod | null
+  signed_by_user?: AppUser | null
 }
 
 export interface EquipmentItem {
