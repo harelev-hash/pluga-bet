@@ -369,6 +369,25 @@ export default function SoldiersImport({ departments }: Props) {
         </div>
       )}
 
+      {/* Progress bar */}
+      {progress && (
+        <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-4 space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-slate-700">מייבא חיילים...</span>
+            <span className="text-blue-600 font-semibold tabular-nums">{progress.done} / {progress.total}</span>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div
+              className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-200"
+              style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-400 text-center">
+            {Math.round((progress.done / progress.total) * 100)}% הושלם
+          </p>
+        </div>
+      )}
+
       {/* Import results */}
       {importResult && (
         <div className="space-y-3">

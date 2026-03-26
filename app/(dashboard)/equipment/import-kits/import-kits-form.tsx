@@ -70,6 +70,7 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
   const [rows, setRows] = useState<KitRow[]>([])
   const [result, setResult] = useState<{ kitsCreated: number; assignmentsCreated: number; skipped: string[] } | null>(null)
   const [openPicker, setOpenPicker] = useState<number | null>(null) // kitNumber with open picker
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null)
 
   const updateSoldier = (kitNumber: number, soldier: Soldier | null) => {
     setRows(prev => prev.map(r => r.kitNumber === kitNumber ? { ...r, soldier } : r))
@@ -177,6 +178,9 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
       const kitType = types.find(t => t.name === 'תיק לוחם')
       if (!kitType) { alert('לא נמצא סוג ציוד "תיק לוחם" — צור אותו קודם בניהול ציוד'); return }
 
+      setProgress({ current: 0, total: rows.length })
+      let processed = 0
+
       for (const row of rows) {
         // 1. Create equipment_item for the kit (if not exists)
         let kitItemId: number | null = null
@@ -244,8 +248,12 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
           if (!error) assignmentsCreated++
           else skipped.push(`${row.soldier.full_name} — ${item.typeName}: ${error.message}`)
         }
+
+        processed++
+        setProgress({ current: processed, total: rows.length })
       }
 
+      setProgress(null)
       setResult({ kitsCreated, assignmentsCreated, skipped })
       router.refresh()
     })
@@ -302,7 +310,7 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
                 className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
                 <Upload className="w-4 h-4" />
-                {isPending ? 'מייבא...' : 'ייבא עכשיו'}
+                {isPending ? `מייבא... (${progress?.current ?? 0}/${progress?.total ?? rows.length})` : 'ייבא עכשיו'}
               </button>
             </div>
             <div className="overflow-x-auto max-h-96">
@@ -358,6 +366,25 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
             </div>
           </div>
         </>
+      )}
+
+      {/* Progress bar */}
+      {progress && (
+        <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-4 space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-slate-700">מייבא תיקי לוחם...</span>
+            <span className="text-blue-600 font-semibold tabular-nums">{progress.current} / {progress.total}</span>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div
+              className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-200"
+              style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-400 text-center">
+            {Math.round((progress.current / progress.total) * 100)}% הושלם
+          </p>
+        </div>
       )}
 
       {/* Result */}
