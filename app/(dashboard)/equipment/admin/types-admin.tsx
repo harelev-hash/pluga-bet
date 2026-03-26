@@ -232,7 +232,7 @@ export default function TypesAdmin({ types }: Props) {
                       <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">שם פריט</th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">בעלות</th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">יחידה</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">מסודר?</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">מס' ייחודי?</th>
                       <th className="px-4 py-2 w-20"></th>
                     </tr>
                   </thead>
@@ -299,7 +299,7 @@ export default function TypesAdmin({ types }: Props) {
                             </span>
                           </td>
                           <td className="px-4 py-2.5 text-slate-500 text-xs">{item.unit ?? '—'}</td>
-                          <td className="px-4 py-2.5 text-slate-500 text-xs">{item.is_serialized ? 'כן' : 'לא'}</td>
+                          <td className="px-4 py-2.5 text-xs">{item.is_serialized ? <span className="text-blue-600 font-medium">כן</span> : <span className="text-slate-300">לא</span>}</td>
                           <td className="px-4 py-2.5">
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                               <button
@@ -358,7 +358,7 @@ export default function TypesAdmin({ types }: Props) {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs text-slate-500">מסודר?</label>
+                      <label className="text-xs text-slate-500">מס' ייחודי?</label>
                       <select
                         value={newItemForm.is_serialized ? '1' : '0'}
                         onChange={e => setNewItemForm(f => ({ ...f, is_serialized: e.target.value === '1' }))}
