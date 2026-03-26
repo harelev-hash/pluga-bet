@@ -12,7 +12,7 @@ export default async function InventoryPage() {
     supabase
       .from('equipment_assignments')
       .select('*, soldier:soldiers(id, full_name, rank, department_id)')
-      .eq('status', 'active'),
+      .in('status', ['active', 'planned']),
   ])
 
   return (
@@ -23,7 +23,7 @@ export default async function InventoryPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">מלאי ציוד (רשמצ)</h1>
-          <p className="text-slate-500 text-sm mt-0.5">מעקב על כל הציוד — פנוי, חתום וזיהוי מיקום</p>
+          <p className="text-slate-500 text-sm mt-0.5">מעקב על כל הציוד — פנוי / מיועד / חתום</p>
         </div>
       </div>
 

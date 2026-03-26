@@ -24,15 +24,16 @@ export default function InventoryTable({ types, items, assignments }: Props) {
   const [search, setSearch] = useState('')
   const [filterOwnership, setFilterOwnership] = useState<string>('')
 
-  // For each type: calculate total inventory and how many are assigned
+  // For each type: calculate total inventory split by status
   const stats = types.map(type => {
     if (type.is_serialized) {
       const typeItems = items.filter(i => i.type_id === type.id)
-      const assignedItemIds = new Set(
-        assignments.filter(a => a.item_id != null).map(a => a.item_id!)
-      )
+      const activeItemIds = new Set(assignments.filter(a => a.item_id != null && a.status === 'active').map(a => a.item_id!))
+      const plannedItemIds = new Set(assignments.filter(a => a.item_id != null && a.status === 'planned').map(a => a.item_id!))
+      const assignedItemIds = new Set([...activeItemIds, ...plannedItemIds])
       const total = typeItems.length
-      const assigned = typeItems.filter(i => assignedItemIds.has(i.id)).length
+      const active = typeItems.filter(i => activeItemIds.has(i.id)).length
+      const planned = typeItems.filter(i => plannedItemIds.has(i.id)).length
       const assignedDetails = assignments
         .filter(a => a.item_id != null && typeItems.some(i => i.id === a.item_id))
         .map(a => ({
@@ -42,17 +43,18 @@ export default function InventoryTable({ types, items, assignments }: Props) {
           condition: a.condition_in,
           attribute: a.attribute,
           location: typeItems.find(i => i.id === a.item_id)?.location,
+          status: a.status,
         }))
       const freeLocations = typeItems
         .filter(i => !assignedItemIds.has(i.id))
         .map(i => i.location)
         .filter(Boolean) as string[]
-      return { type, total, assigned, free: total - assigned, assignedDetails, freeLocations, isSerialized: true }
+      return { type, total, active, planned, free: total - active - planned, assignedDetails, freeLocations, isSerialized: true }
     } else {
-      // Quantitative: sum items in inventory + sum assignments
       const inventoryQty = items.filter(i => i.type_id === type.id).reduce((s, i) => s + (i.quantity ?? 0), 0)
-      const assignedQty = assignments.filter(a => a.type_id === type.id).reduce((s, a) => s + a.quantity, 0)
-      const total = inventoryQty + assignedQty
+      const activeQty = assignments.filter(a => a.type_id === type.id && a.status === 'active').reduce((s, a) => s + a.quantity, 0)
+      const plannedQty = assignments.filter(a => a.type_id === type.id && a.status === 'planned').reduce((s, a) => s + a.quantity, 0)
+      const total = inventoryQty + activeQty + plannedQty
       const assignedDetails = assignments
         .filter(a => a.type_id === type.id)
         .map(a => ({
@@ -63,11 +65,12 @@ export default function InventoryTable({ types, items, assignments }: Props) {
           attribute: a.attribute,
           quantity: a.quantity,
           location: null,
+          status: a.status,
         }))
       const freeLocations = items
         .filter(i => i.type_id === type.id && i.location)
         .map(i => i.location!)
-      return { type, total, assigned: assignedQty, free: inventoryQty, assignedDetails, freeLocations, isSerialized: false }
+      return { type, total, active: activeQty, planned: plannedQty, free: inventoryQty, assignedDetails, freeLocations, isSerialized: false }
     }
   })
 
@@ -102,18 +105,22 @@ export default function InventoryTable({ types, items, assignments }: Props) {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
           <p className="text-2xl font-bold text-slate-800">{filtered.reduce((s, r) => s + r.total, 0)}</p>
           <p className="text-xs text-slate-500 mt-1">סה"כ פריטים</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
-          <p className="text-2xl font-bold text-blue-600">{filtered.reduce((s, r) => s + r.assigned, 0)}</p>
-          <p className="text-xs text-slate-500 mt-1">חתומים</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
           <p className="text-2xl font-bold text-green-600">{filtered.reduce((s, r) => s + r.free, 0)}</p>
           <p className="text-xs text-slate-500 mt-1">פנויים</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
+          <p className="text-2xl font-bold text-amber-500">{filtered.reduce((s, r) => s + r.planned, 0)}</p>
+          <p className="text-xs text-slate-500 mt-1">מיועדים</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
+          <p className="text-2xl font-bold text-blue-600">{filtered.reduce((s, r) => s + r.active, 0)}</p>
+          <p className="text-xs text-slate-500 mt-1">חתומים</p>
         </div>
       </div>
 
@@ -126,14 +133,15 @@ export default function InventoryTable({ types, items, assignments }: Props) {
               <th className="px-4 py-3 text-right font-semibold text-slate-500">קטגוריה</th>
               <th className="px-4 py-3 text-right font-semibold text-slate-500">בעלות</th>
               <th className="px-4 py-3 text-center font-semibold text-slate-500">סה"כ</th>
-              <th className="px-4 py-3 text-center font-semibold text-slate-500">חתומים</th>
-              <th className="px-4 py-3 text-center font-semibold text-slate-500">פנויים</th>
+              <th className="px-4 py-3 text-center font-semibold text-green-600">פנויים</th>
+              <th className="px-4 py-3 text-center font-semibold text-amber-500">מיועדים</th>
+              <th className="px-4 py-3 text-center font-semibold text-blue-600">חתומים</th>
               <th className="px-4 py-3 text-right font-semibold text-slate-500">מיקום פנויים</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {filtered.map(({ type, total, assigned, free, freeLocations, assignedDetails, isSerialized }) => (
+            {filtered.map(({ type, total, active, planned, free, freeLocations, assignedDetails, isSerialized }) => (
               <>
                 <tr
                   key={type.id}
@@ -149,14 +157,21 @@ export default function InventoryTable({ types, items, assignments }: Props) {
                   </td>
                   <td className="px-4 py-3 text-center font-bold text-slate-700">{total}</td>
                   <td className="px-4 py-3 text-center">
-                    {assigned > 0 ? (
-                      <span className="font-bold text-blue-600">{assigned}</span>
+                    <span className={`font-bold ${free === 0 ? 'text-red-500' : 'text-green-600'}`}>{free}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {planned > 0 ? (
+                      <span className="font-bold text-amber-500">{planned}</span>
                     ) : (
                       <span className="text-slate-300">0</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`font-bold ${free === 0 ? 'text-red-500' : 'text-green-600'}`}>{free}</span>
+                    {active > 0 ? (
+                      <span className="font-bold text-blue-600">{active}</span>
+                    ) : (
+                      <span className="text-slate-300">0</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-slate-400 text-xs">
                     {freeLocations.length > 0
@@ -174,11 +189,11 @@ export default function InventoryTable({ types, items, assignments }: Props) {
 
                 {expanded === type.id && assignedDetails.length > 0 && (
                   <tr key={`${type.id}-detail`}>
-                    <td colSpan={8} className="px-4 pb-4 pt-0 bg-blue-50/50">
+                    <td colSpan={9} className="px-4 pb-4 pt-0 bg-blue-50/50">
                       <div className="rounded-lg border border-blue-100 overflow-hidden">
                         <div className="px-3 py-2 bg-blue-100/50 flex items-center gap-2 text-xs font-semibold text-blue-700">
                           <Users className="w-3.5 h-3.5" />
-                          חיילים חתומים על {type.name}
+                          שיוכים ל-{type.name}
                         </div>
                         <table className="w-full text-xs">
                           <thead className="border-b border-blue-100">
@@ -186,8 +201,9 @@ export default function InventoryTable({ types, items, assignments }: Props) {
                               <th className="px-3 py-2 text-right font-medium">חייל</th>
                               {isSerialized && <th className="px-3 py-2 text-right font-medium">מ"ס</th>}
                               {!isSerialized && <th className="px-3 py-2 text-right font-medium">כמות</th>}
-                              <th className="px-3 py-2 text-right font-medium">סוג/אפיון</th>
+                              <th className="px-3 py-2 text-right font-medium">אפיון</th>
                               <th className="px-3 py-2 text-right font-medium">מצב</th>
+                              <th className="px-3 py-2 text-right font-medium">סטטוס</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-blue-50">
@@ -201,6 +217,12 @@ export default function InventoryTable({ types, items, assignments }: Props) {
                                 <td className="px-3 py-2 text-slate-500">{d.attribute ?? '—'}</td>
                                 <td className="px-3 py-2">
                                   <ConditionBadge condition={d.condition} />
+                                </td>
+                                <td className="px-3 py-2">
+                                  {(d as any).status === 'planned'
+                                    ? <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">מיועד</span>
+                                    : <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">חתום</span>
+                                  }
                                 </td>
                               </tr>
                             ))}

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Package, PenLine, LayoutList, Settings, ClipboardCheck } from 'lucide-react'
+import { Package, PenLine, LayoutList, Settings, ClipboardCheck, FileSpreadsheet, UserCheck } from 'lucide-react'
 
 function ConditionBadge({ condition }: { condition: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -35,16 +35,26 @@ export default async function EquipmentPage() {
         <p className="text-slate-500 text-sm mt-0.5">ניהול ציוד וחתמות</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <Link href="/equipment/import-kits" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
+          <FileSpreadsheet className="w-5 h-5" />
+          <span className="font-semibold text-sm">ייבוא תיקי לוחם</span>
+          <span className="text-xs text-indigo-100">ייבוא מאקסל → מיועד</span>
+        </Link>
+        <Link href="/equipment/reception" className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
+          <UserCheck className="w-5 h-5" />
+          <span className="font-semibold text-sm">קליטת חיילים</span>
+          <span className="text-xs text-teal-100">אישור מיועד → חתום</span>
+        </Link>
         <Link href="/equipment/sign" className="bg-green-600 hover:bg-green-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
           <PenLine className="w-5 h-5" />
-          <span className="font-semibold text-sm">חתמת ציוד</span>
+          <span className="font-semibold text-sm">חתמת ציוד ידנית</span>
           <span className="text-xs text-green-100">שיוך ציוד לחייל</span>
         </Link>
         <Link href="/equipment/inventory" className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
           <LayoutList className="w-5 h-5" />
           <span className="font-semibold text-sm">מלאי (רשמצ)</span>
-          <span className="text-xs text-blue-100">סה"כ / חתומים / פנויים</span>
+          <span className="text-xs text-blue-100">פנוי / מיועד / חתום</span>
         </Link>
         <Link href="/equipment/admin?tab=types" className="bg-slate-700 hover:bg-slate-800 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
           <Settings className="w-5 h-5" />
