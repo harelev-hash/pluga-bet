@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { EquipmentType, EquipmentItem, EquipmentTemplate, EquipmentOwnership } from '@/lib/types/database'
-import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, ArrowLeftRight } from 'lucide-react'
 
 interface Soldier { id: number; full_name: string; rank: string; role_in_unit: string | null; department_id: number | null }
 
@@ -53,13 +53,12 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
   const [existingAssignments, setExistingAssignments] = useState<{ id: number; name: string; attribute: string | null; status: string }[]>([])
   const [showExisting, setShowExisting] = useState(true)
 
-  useEffect(() => {
-    if (!soldierId) { setExistingAssignments([]); return }
+  const fetchExisting = (sid: number) => {
     const supabase = createClient()
     supabase
       .from('equipment_assignments')
       .select('id, status, attribute, item:equipment_items(type:equipment_types(name)), type:equipment_types(name)')
-      .eq('soldier_id', soldierId)
+      .eq('soldier_id', sid)
       .in('status', ['active', 'planned'])
       .order('status')
       .then(({ data }) => {
@@ -70,7 +69,35 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           status: a.status,
         })))
       })
+  }
+
+  useEffect(() => {
+    if (!soldierId) { setExistingAssignments([]); return }
+    fetchExisting(soldierId)
   }, [soldierId])
+
+  const toggleAssignmentStatus = (id: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'planned' : 'active'
+    startTransition(async () => {
+      const supabase = createClient()
+      await supabase.from('equipment_assignments').update({
+        status: newStatus,
+        ...(newStatus === 'active' ? { signed_at: new Date().toISOString() } : { signed_at: null }),
+      }).eq('id', id)
+      if (soldierId) fetchExisting(soldierId)
+      router.refresh()
+    })
+  }
+
+  const deleteAssignment = (id: number, name: string) => {
+    if (!confirm(`למחוק את "${name}" מרשימת הציוד של החייל?`)) return
+    startTransition(async () => {
+      const supabase = createClient()
+      await supabase.from('equipment_assignments').delete().eq('id', id)
+      if (soldierId) fetchExisting(soldierId)
+      router.refresh()
+    })
+  }
 
   const soldier = soldiers.find(s => s.id === soldierId)
 
@@ -248,12 +275,28 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
             {showExisting && (
               <div className="divide-y divide-slate-50">
                 {existingAssignments.map(a => (
-                  <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 text-xs">
+                  <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 text-xs group">
                     <span className={`px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                       {a.status === 'active' ? 'חתום' : 'מיועד'}
                     </span>
-                    <span className="text-slate-700">{a.name}</span>
+                    <span className="text-slate-700 flex-1">{a.name}</span>
                     {a.attribute && <span className="text-slate-400">({a.attribute})</span>}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => toggleAssignmentStatus(a.id, a.status)}
+                        title={a.status === 'active' ? 'הפוך למיועד' : 'סמן כחתום'}
+                        className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                      >
+                        <ArrowLeftRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => deleteAssignment(a.id, a.name)}
+                        title="מחק"
+                        className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

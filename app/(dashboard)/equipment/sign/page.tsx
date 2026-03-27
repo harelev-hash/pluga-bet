@@ -21,7 +21,7 @@ export default async function SignEquipmentPage() {
           <ArrowRight className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">חתמת ציוד</h1>
+          <h1 className="text-2xl font-bold text-slate-800">החתמת ציוד</h1>
           <p className="text-slate-500 text-sm mt-0.5">שיוך ציוד לחייל</p>
         </div>
       </div>
