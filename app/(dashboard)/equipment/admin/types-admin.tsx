@@ -230,6 +230,7 @@ export default function TypesAdmin({ types }: Props) {
                   <thead className="bg-slate-50">
                     <tr>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">שם פריט</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">קטגוריה</th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">בעלות</th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">יחידה</th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-slate-500">מס' ייחודי?</th>
@@ -249,6 +250,15 @@ export default function TypesAdmin({ types }: Props) {
                               onKeyDown={e => { if (e.key === 'Enter') saveEdit(item.id); if (e.key === 'Escape') setEditingType(null) }}
                               className="border border-blue-300 rounded-lg px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
                             />
+                          </td>
+                          <td className="px-3 py-2">
+                            <select
+                              value={editForm.category ?? cat}
+                              onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
+                              className="border border-blue-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-blue-50"
+                            >
+                              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
                           </td>
                           <td className="px-3 py-2">
                             <select
@@ -293,6 +303,7 @@ export default function TypesAdmin({ types }: Props) {
                         // ── Display row ──
                         <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
                           <td className="px-4 py-2.5 font-medium text-slate-800">{item.name}</td>
+                          <td className="px-4 py-2.5 text-xs text-slate-400">{item.category}</td>
                           <td className="px-4 py-2.5">
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${OWNERSHIP_COLORS[item.ownership]}`}>
                               {OWNERSHIP_LABELS[item.ownership]}
@@ -303,7 +314,7 @@ export default function TypesAdmin({ types }: Props) {
                           <td className="px-4 py-2.5">
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                               <button
-                                onClick={() => { setEditingType(item.id); setEditForm({ name: item.name, ownership: item.ownership, unit: item.unit, is_serialized: item.is_serialized }) }}
+                                onClick={() => { setEditingType(item.id); setEditForm({ name: item.name, category: item.category, ownership: item.ownership, unit: item.unit, is_serialized: item.is_serialized }) }}
                                 className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
                               >
                                 <Pencil className="w-3.5 h-3.5" />

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { EquipmentType, EquipmentItem, EquipmentTemplate } from '@/lib/types/database'
-import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface Soldier { id: number; full_name: string; rank: string; role_in_unit: string | null; department_id: number | null }
 
@@ -12,6 +12,7 @@ interface SignRow {
   key: string
   type_id: number | null
   item_id: number | null       // serialized
+  serialInput: string          // text input for serial number
   quantity: number             // quantitative
   attribute: string
   condition_in: string
@@ -46,7 +47,29 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
 
   const [soldierId, setSoldierId] = useState<number | null>(null)
   const [rows, setRows] = useState<SignRow[]>([])
+  const [mode, setMode] = useState<'active' | 'planned'>('active')
   const [result, setResult] = useState<{ success: number; errors: string[] } | null>(null)
+  const [existingAssignments, setExistingAssignments] = useState<{ id: number; name: string; attribute: string | null; status: string }[]>([])
+  const [showExisting, setShowExisting] = useState(true)
+
+  useEffect(() => {
+    if (!soldierId) { setExistingAssignments([]); return }
+    const supabase = createClient()
+    supabase
+      .from('equipment_assignments')
+      .select('id, status, attribute, item:equipment_items(type:equipment_types(name)), type:equipment_types(name)')
+      .eq('soldier_id', soldierId)
+      .in('status', ['active', 'planned'])
+      .order('status')
+      .then(({ data }) => {
+        setExistingAssignments((data ?? []).map((a: any) => ({
+          id: a.id,
+          name: a.item?.type?.name ?? a.type?.name ?? '—',
+          attribute: a.attribute,
+          status: a.status,
+        })))
+      })
+  }, [soldierId])
 
   const soldier = soldiers.find(s => s.id === soldierId)
 
@@ -69,6 +92,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           key: nextKey(),
           type_id: type.id,
           item_id: null,
+          serialInput: '',
           quantity: ti.default_quantity,
           attribute: '',
           condition_in: 'serviceable',
@@ -90,7 +114,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
 
   const addRow = () => {
     setRows(prev => [...prev, {
-      key: nextKey(), type_id: null, item_id: null, quantity: 1, attribute: '',
+      key: nextKey(), type_id: null, item_id: null, serialInput: '', quantity: 1, attribute: '',
       condition_in: 'serviceable', notes: '', typeName: '', isSerialized: false,
       requiresAttribute: false, attributeOptions: [],
     }])
@@ -104,6 +128,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
       if (patch.type_id !== undefined && patch.type_id !== r.type_id) {
         const type = types.find(t => t.id === patch.type_id)
         updated.item_id = null
+        updated.serialInput = ''
         updated.attribute = ''
         updated.typeName = type?.name ?? ''
         updated.isSerialized = type?.is_serialized ?? false
@@ -118,7 +143,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
 
   const canSubmit = soldierId && rows.length > 0 && rows.every(r =>
     r.type_id &&
-    (!r.isSerialized || r.item_id) &&
+    (!r.isSerialized || r.serialInput.trim()) &&
     (!r.requiresAttribute || r.attribute)
   )
 
@@ -134,14 +159,25 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
         const payload: Record<string, unknown> = {
           soldier_id: soldierId,
           period_id: currentPeriodId,
-          status: 'active',
+          status: mode,
           condition_in: row.condition_in,
           attribute: row.attribute || null,
           notes: row.notes || null,
-          signed_at: new Date().toISOString(),
+          ...(mode === 'active' ? { signed_at: new Date().toISOString() } : {}),
         }
         if (row.isSerialized) {
-          payload.item_id = row.item_id
+          let itemId = row.item_id
+          if (!itemId && row.serialInput.trim()) {
+            // Create new equipment_item for this serial number
+            const { data: newItem, error: itemErr } = await supabase
+              .from('equipment_items')
+              .insert({ type_id: row.type_id, serial_number: row.serialInput.trim(), condition: row.condition_in })
+              .select('id')
+              .single()
+            if (itemErr) { errors.push(`${row.typeName}: ${itemErr.message}`); continue }
+            itemId = newItem.id
+          }
+          payload.item_id = itemId
           payload.quantity = 1
         } else {
           payload.type_id = row.type_id
@@ -194,13 +230,56 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
             </div>
           </div>
         )}
+
+        {/* Existing equipment */}
+        {soldierId && existingAssignments.length > 0 && (
+          <div className="border border-slate-100 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setShowExisting(v => !v)}
+              className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 hover:bg-slate-100 transition-colors text-xs font-semibold text-slate-600"
+            >
+              <span>ציוד קיים ({existingAssignments.length} פריטים)</span>
+              {showExisting ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+            {showExisting && (
+              <div className="divide-y divide-slate-50">
+                {existingAssignments.map(a => (
+                  <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 text-xs">
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {a.status === 'active' ? 'חתום' : 'מיועד'}
+                    </span>
+                    <span className="text-slate-700">{a.name}</span>
+                    {a.attribute && <span className="text-slate-400">({a.attribute})</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Mode toggle */}
+        <div className="flex items-center gap-2 pt-1">
+          <span className="text-xs text-slate-500 ml-1">פעולה:</span>
+          <button
+            onClick={() => setMode('active')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${mode === 'active' ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          >
+            החתם עכשיו
+          </button>
+          <button
+            onClick={() => setMode('planned')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${mode === 'planned' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          >
+            ייעד בלבד
+          </button>
+        </div>
       </div>
 
       {/* Rows */}
       {soldierId && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <span className="font-semibold text-slate-700">פריטים לחתימה ({rows.length})</span>
+            <span className="font-semibold text-slate-700">{mode === 'active' ? 'פריטים לחתימה' : 'פריטים לייעוד'} ({rows.length})</span>
             <button
               onClick={addRow}
               className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
@@ -240,10 +319,10 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit || isPending}
-                className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"
+                className={`flex items-center gap-2 text-white px-5 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors shadow-sm ${mode === 'active' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
               >
                 <Check className="w-4 h-4" />
-                {isPending ? 'שומר...' : `אשר חתימה (${rows.length} פריטים)`}
+                {isPending ? 'שומר...' : mode === 'active' ? `אשר חתימה (${rows.length} פריטים)` : `ייעד (${rows.length} פריטים)`}
               </button>
             </div>
           )}
@@ -256,7 +335,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           {result.success > 0 && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-2 text-sm text-green-700">
               <CheckCircle2 className="w-5 h-5 shrink-0" />
-              {result.success} פריטים נחתמו בהצלחה!
+              {result.success} פריטים {mode === 'active' ? 'נחתמו' : 'יועדו'} בהצלחה!
             </div>
           )}
           {result.errors.map((e, i) => (
@@ -300,24 +379,30 @@ function SignRowComponent({
         </select>
       </div>
 
-      {/* Serialized: pick serial number */}
+      {/* Serialized: serial number input with autocomplete from existing items */}
       {row.isSerialized && (
         <div className="flex flex-col gap-1 min-w-36">
           <label className="text-xs text-slate-500">מספר סידורי</label>
-          <select
-            value={row.item_id ?? ''}
-            onChange={e => onUpdate({ item_id: e.target.value ? parseInt(e.target.value) : null })}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-          >
-            <option value="">בחר מ"ס...</option>
+          <input
+            list={`serials-${row.key}`}
+            value={row.serialInput ?? ''}
+            onChange={e => {
+              const val = e.target.value
+              const match = serialItems.find(i => i.serial_number === val)
+              onUpdate({ serialInput: val, item_id: match?.id ?? null })
+            }}
+            placeholder="הקלד מ״ס..."
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 font-mono"
+          />
+          <datalist id={`serials-${row.key}`}>
             {serialItems.map(i => (
-              <option key={i.id} value={i.id}>
-                {i.serial_number ?? `#${i.id}`}{i.location ? ` (${i.location})` : ''}
+              <option key={i.id} value={i.serial_number ?? ''}>
+                {i.location ? `(${i.location})` : ''}
               </option>
             ))}
-          </select>
+          </datalist>
           {row.type_id && serialItems.length === 0 && (
-            <p className="text-xs text-red-500">אין פריטים פנויים</p>
+            <p className="text-xs text-amber-500">אין פריטים קיימים במלאי</p>
           )}
         </div>
       )}
@@ -337,10 +422,10 @@ function SignRowComponent({
       )}
 
       {/* Attribute (vest type, helmet size, etc.) */}
-      {row.type_id && (row.requiresAttribute || row.attributeOptions.length > 0) && (
+      {row.type_id && (
         <div className="flex flex-col gap-1 min-w-32">
           <label className="text-xs text-slate-500">
-            {row.requiresAttribute ? '* סוג / מידה' : 'סוג / מידה'}
+            {row.requiresAttribute ? '* סוג / מידה' : 'סוג / מידה (רשות)'}
           </label>
           {row.attributeOptions.length > 0 ? (
             <select
@@ -357,8 +442,8 @@ function SignRowComponent({
             <input
               value={row.attribute}
               onChange={e => onUpdate({ attribute: e.target.value })}
-              placeholder="הזן סוג..."
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              placeholder={row.requiresAttribute ? 'חובה' : 'למשל: עמרן, M...'}
+              className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 ${row.requiresAttribute && !row.attribute ? 'border-amber-300' : 'border-slate-200'}`}
             />
           )}
         </div>
