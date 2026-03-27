@@ -163,6 +163,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           soldier_id: soldierId,
           period_id: currentPeriodId,
           status: mode,
+          ownership: row.ownership,
           condition_in: row.condition_in,
           attribute: row.attribute || null,
           notes: row.notes || null,

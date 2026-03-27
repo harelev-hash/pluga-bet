@@ -134,6 +134,7 @@ export interface EquipmentAssignment {
   type_id: number | null
   quantity: number
   attribute: string | null
+  ownership: EquipmentOwnership
   period_id: number | null
   status: AssignmentStatus
   condition_in: AssignmentCondition
