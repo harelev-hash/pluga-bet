@@ -297,6 +297,23 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         <button
                           onClick={() => {
+                            const newStatus = a.status === 'active' ? 'planned' : 'active'
+                            startTransition(async () => {
+                              const supabase = createClient()
+                              await supabase.from('equipment_assignments').update({
+                                status: newStatus,
+                                ...(newStatus === 'active' ? { signed_at: new Date().toISOString() } : { signed_at: null }),
+                              }).eq('id', a.id)
+                              if (soldierId) fetchExisting(soldierId)
+                              router.refresh()
+                            })
+                          }}
+                          className="text-xs text-slate-400 hover:text-blue-600 transition-colors px-1"
+                        >
+                          {a.status === 'active' ? 'סמן כמיועד' : 'סמן כחתום'}
+                        </button>
+                        <button
+                          onClick={() => {
                             setEditingAssignmentId(editingAssignmentId === a.id ? null : a.id)
                             setEditAssignmentForm({ status: a.status as any, ownership: a.ownership, quantity: a.quantity, attribute: a.attribute ?? '', condition_in: a.condition_in, notes: a.notes ?? '' })
                           }}
