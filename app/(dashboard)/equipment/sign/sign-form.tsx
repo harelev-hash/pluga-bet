@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { EquipmentType, EquipmentItem, EquipmentTemplate, EquipmentOwnership } from '@/lib/types/database'
-import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, ArrowLeftRight } from 'lucide-react'
+import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react'
 
 interface Soldier { id: number; full_name: string; rank: string; role_in_unit: string | null; department_id: number | null }
 
@@ -50,14 +50,20 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
   const [rows, setRows] = useState<SignRow[]>([])
   const [mode, setMode] = useState<'active' | 'planned'>('active')
   const [result, setResult] = useState<{ success: number; errors: string[] } | null>(null)
-  const [existingAssignments, setExistingAssignments] = useState<{ id: number; name: string; attribute: string | null; status: string }[]>([])
+  type ExistingAssignment = {
+    id: number; name: string; attribute: string | null; status: string
+    ownership: EquipmentOwnership; quantity: number; condition_in: string; notes: string | null
+  }
+  const [existingAssignments, setExistingAssignments] = useState<ExistingAssignment[]>([])
   const [showExisting, setShowExisting] = useState(true)
+  const [editingAssignmentId, setEditingAssignmentId] = useState<number | null>(null)
+  const [editAssignmentForm, setEditAssignmentForm] = useState<Partial<ExistingAssignment>>({})
 
   const fetchExisting = (sid: number) => {
     const supabase = createClient()
     supabase
       .from('equipment_assignments')
-      .select('id, status, attribute, item:equipment_items(type:equipment_types(name)), type:equipment_types(name)')
+      .select('id, status, attribute, ownership, quantity, condition_in, notes, item:equipment_items(type:equipment_types(name)), type:equipment_types(name)')
       .eq('soldier_id', sid)
       .in('status', ['active', 'planned'])
       .order('status')
@@ -67,6 +73,10 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           name: a.item?.type?.name ?? a.type?.name ?? '—',
           attribute: a.attribute,
           status: a.status,
+          ownership: a.ownership ?? 'platoon',
+          quantity: a.quantity ?? 1,
+          condition_in: a.condition_in ?? 'serviceable',
+          notes: a.notes,
         })))
       })
   }
@@ -76,14 +86,14 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
     fetchExisting(soldierId)
   }, [soldierId])
 
-  const toggleAssignmentStatus = (id: number, currentStatus: string) => {
-    const newStatus = currentStatus === 'active' ? 'planned' : 'active'
+  const saveAssignmentEdit = (id: number) => {
     startTransition(async () => {
       const supabase = createClient()
-      await supabase.from('equipment_assignments').update({
-        status: newStatus,
-        ...(newStatus === 'active' ? { signed_at: new Date().toISOString() } : { signed_at: null }),
-      }).eq('id', id)
+      const patch: Record<string, unknown> = { ...editAssignmentForm }
+      if (patch.status === 'active') patch.signed_at = new Date().toISOString()
+      if (patch.status === 'planned') patch.signed_at = null
+      await supabase.from('equipment_assignments').update(patch).eq('id', id)
+      setEditingAssignmentId(null)
       if (soldierId) fetchExisting(soldierId)
       router.refresh()
     })
@@ -94,6 +104,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
     startTransition(async () => {
       const supabase = createClient()
       await supabase.from('equipment_assignments').delete().eq('id', id)
+      setEditingAssignmentId(null)
       if (soldierId) fetchExisting(soldierId)
       router.refresh()
     })
@@ -275,28 +286,115 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
             {showExisting && (
               <div className="divide-y divide-slate-50">
                 {existingAssignments.map(a => (
-                  <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 text-xs group">
-                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {a.status === 'active' ? 'חתום' : 'מיועד'}
-                    </span>
-                    <span className="text-slate-700 flex-1">{a.name}</span>
-                    {a.attribute && <span className="text-slate-400">({a.attribute})</span>}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => toggleAssignmentStatus(a.id, a.status)}
-                        title={a.status === 'active' ? 'הפוך למיועד' : 'סמן כחתום'}
-                        className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
-                      >
-                        <ArrowLeftRight className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => deleteAssignment(a.id, a.name)}
-                        title="מחק"
-                        className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                  <div key={a.id}>
+                    {/* Display row */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 text-xs group">
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {a.status === 'active' ? 'חתום' : 'מיועד'}
+                      </span>
+                      <span className="text-slate-700 flex-1">{a.name}</span>
+                      {a.attribute && <span className="text-slate-400">({a.attribute})</span>}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button
+                          onClick={() => {
+                            setEditingAssignmentId(editingAssignmentId === a.id ? null : a.id)
+                            setEditAssignmentForm({ status: a.status as any, ownership: a.ownership, quantity: a.quantity, attribute: a.attribute ?? '', condition_in: a.condition_in, notes: a.notes ?? '' })
+                          }}
+                          className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deleteAssignment(a.id, a.name)}
+                          className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Inline edit panel */}
+                    {editingAssignmentId === a.id && (
+                      <div className="px-3 pb-3 pt-1 bg-blue-50/40 border-t border-blue-100 flex flex-wrap gap-2 items-end">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-slate-500">סטטוס</label>
+                          <select
+                            value={editAssignmentForm.status ?? a.status}
+                            onChange={e => setEditAssignmentForm(f => ({ ...f, status: e.target.value as any }))}
+                            className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          >
+                            <option value="active">חתום</option>
+                            <option value="planned">מיועד</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-slate-500">בעלות</label>
+                          <select
+                            value={editAssignmentForm.ownership ?? a.ownership}
+                            onChange={e => setEditAssignmentForm(f => ({ ...f, ownership: e.target.value as EquipmentOwnership }))}
+                            className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          >
+                            <option value="personal">אישי</option>
+                            <option value="platoon">פלוגתי</option>
+                            <option value="battalion">גדודי</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-slate-500">סוג / מידה</label>
+                          <input
+                            value={editAssignmentForm.attribute ?? ''}
+                            onChange={e => setEditAssignmentForm(f => ({ ...f, attribute: e.target.value }))}
+                            placeholder="עמרן, M..."
+                            className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-24 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-slate-500">כמות</label>
+                          <input
+                            type="number" min={1}
+                            value={editAssignmentForm.quantity ?? a.quantity}
+                            onChange={e => setEditAssignmentForm(f => ({ ...f, quantity: parseInt(e.target.value) || 1 }))}
+                            className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-16 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-slate-500">מצב</label>
+                          <select
+                            value={editAssignmentForm.condition_in ?? a.condition_in}
+                            onChange={e => setEditAssignmentForm(f => ({ ...f, condition_in: e.target.value }))}
+                            className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          >
+                            <option value="serviceable">תקין</option>
+                            <option value="worn">בלאי</option>
+                            <option value="damaged">פגום</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1 flex-1 min-w-24">
+                          <label className="text-xs text-slate-500">הערות</label>
+                          <input
+                            value={editAssignmentForm.notes ?? ''}
+                            onChange={e => setEditAssignmentForm(f => ({ ...f, notes: e.target.value }))}
+                            placeholder="הערה..."
+                            className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                        </div>
+                        <div className="flex gap-1.5 items-end">
+                          <button
+                            onClick={() => saveAssignmentEdit(a.id)}
+                            disabled={isPending}
+                            className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                          >
+                            <Check className="w-3.5 h-3.5" /> שמור
+                          </button>
+                          <button
+                            onClick={() => setEditingAssignmentId(null)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
