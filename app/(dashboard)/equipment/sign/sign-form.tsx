@@ -257,29 +257,13 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           </div>
         )}
 
-        {/* Mode toggle */}
-        <div className="flex items-center gap-2 pt-1">
-          <span className="text-xs text-slate-500 ml-1">פעולה:</span>
-          <button
-            onClick={() => setMode('active')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${mode === 'active' ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-          >
-            החתם עכשיו
-          </button>
-          <button
-            onClick={() => setMode('planned')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${mode === 'planned' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-          >
-            ייעד בלבד
-          </button>
-        </div>
       </div>
 
       {/* Rows */}
       {soldierId && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <span className="font-semibold text-slate-700">{mode === 'active' ? 'פריטים לחתימה' : 'פריטים לייעוד'} ({rows.length})</span>
+            <span className="font-semibold text-slate-700">פריטים ({rows.length})</span>
             <button
               onClick={addRow}
               className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
@@ -308,7 +292,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           )}
 
           {rows.length > 0 && (
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between gap-3">
               <div>
                 {!canSubmit && rows.length > 0 && (
                   <p className="text-xs text-amber-600">
@@ -316,14 +300,28 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
                   </p>
                 )}
               </div>
-              <button
-                onClick={handleSubmit}
-                disabled={!canSubmit || isPending}
-                className={`flex items-center gap-2 text-white px-5 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors shadow-sm ${mode === 'active' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
-              >
-                <Check className="w-4 h-4" />
-                {isPending ? 'שומר...' : mode === 'active' ? `אשר חתימה (${rows.length} פריטים)` : `ייעד (${rows.length} פריטים)`}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setMode('active')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'active' ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  החתם עכשיו
+                </button>
+                <button
+                  onClick={() => setMode('planned')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'planned' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  ייעד בלבד
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!canSubmit || isPending}
+                  className={`flex items-center gap-2 text-white px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors shadow-sm ${mode === 'active' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                  <Check className="w-4 h-4" />
+                  {isPending ? 'שומר...' : mode === 'active' ? `אשר חתימה (${rows.length} פריטים)` : `ייעד (${rows.length} פריטים)`}
+                </button>
+              </div>
             </div>
           )}
         </div>
