@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { EquipmentType, EquipmentItem, EquipmentTemplate } from '@/lib/types/database'
+import type { EquipmentType, EquipmentItem, EquipmentTemplate, EquipmentOwnership } from '@/lib/types/database'
 import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface Soldier { id: number; full_name: string; rank: string; role_in_unit: string | null; department_id: number | null }
@@ -15,6 +15,7 @@ interface SignRow {
   serialInput: string          // text input for serial number
   quantity: number             // quantitative
   attribute: string
+  ownership: EquipmentOwnership
   condition_in: string
   notes: string
   // derived
@@ -95,6 +96,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           serialInput: '',
           quantity: ti.default_quantity,
           attribute: '',
+          ownership: type.ownership,
           condition_in: 'serviceable',
           notes: '',
           typeName: type.name,
@@ -115,7 +117,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
   const addRow = () => {
     setRows(prev => [...prev, {
       key: nextKey(), type_id: null, item_id: null, serialInput: '', quantity: 1, attribute: '',
-      condition_in: 'serviceable', notes: '', typeName: '', isSerialized: false,
+      ownership: 'platoon', condition_in: 'serviceable', notes: '', typeName: '', isSerialized: false,
       requiresAttribute: false, attributeOptions: [],
     }])
   }
@@ -130,6 +132,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
         updated.item_id = null
         updated.serialInput = ''
         updated.attribute = ''
+        updated.ownership = type?.ownership ?? 'platoon'
         updated.typeName = type?.name ?? ''
         updated.isSerialized = type?.is_serialized ?? false
         updated.requiresAttribute = false
@@ -358,7 +361,7 @@ function SignRowComponent({
   onRemove: () => void
 }) {
   const serialItems = row.type_id && row.isSerialized ? freeSerializedItems(row.type_id) : []
-  const isValid = row.type_id && (!row.isSerialized || row.item_id) && (!row.requiresAttribute || row.attribute)
+  const isValid = row.type_id && (!row.isSerialized || row.serialInput.trim()) && (!row.requiresAttribute || row.attribute)
 
   return (
     <div className={`p-4 flex flex-wrap gap-3 items-end ${!isValid ? 'bg-amber-50/30' : ''}`}>
@@ -399,7 +402,7 @@ function SignRowComponent({
               </option>
             ))}
           </datalist>
-          {row.type_id && serialItems.length === 0 && (
+          {row.type_id && serialItems.length === 0 && row.ownership === 'platoon' && (
             <p className="text-xs text-amber-500">אין פריטים קיימים במלאי</p>
           )}
         </div>
@@ -444,6 +447,22 @@ function SignRowComponent({
               className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 ${row.requiresAttribute && !row.attribute ? 'border-amber-300' : 'border-slate-200'}`}
             />
           )}
+        </div>
+      )}
+
+      {/* Ownership */}
+      {row.type_id && (
+        <div className="flex flex-col gap-1 min-w-24">
+          <label className="text-xs text-slate-500">בעלות</label>
+          <select
+            value={row.ownership}
+            onChange={e => onUpdate({ ownership: e.target.value as EquipmentOwnership })}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+          >
+            <option value="personal">אישי</option>
+            <option value="platoon">פלוגתי</option>
+            <option value="battalion">גדודי</option>
+          </select>
         </div>
       )}
 
