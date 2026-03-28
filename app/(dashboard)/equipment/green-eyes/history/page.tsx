@@ -6,14 +6,13 @@ import GreenEyesHistory from './history-client'
 export default async function GreenEyesHistoryPage() {
   const supabase = await createClient()
 
-  const [{ data: reports }, { data: departments }] = await Promise.all([
+  const [{ data: reports, error: reportsError }, { data: departments }] = await Promise.all([
     supabase
       .from('green_eyes_reports')
       .select(`
         id, report_date, created_at,
         department:departments(id, name),
         template:equipment_templates(id, name),
-        performer:app_users(full_name),
         checks:green_eyes_checks(
           id, is_present, soldier_id,
           soldier:soldiers(full_name, role_in_unit),
@@ -28,6 +27,24 @@ export default async function GreenEyesHistoryPage() {
     supabase.from('departments').select('id, name').order('display_order'),
   ])
 
+  // Try to fetch performer names separately (requires migration_v8)
+  let performerMap: Record<number, string> = {}
+  try {
+    const { data: withPerformer } = await supabase
+      .from('green_eyes_reports')
+      .select('id, performer:app_users(full_name)')
+    if (withPerformer) {
+      withPerformer.forEach((r: any) => {
+        if (r.performer?.full_name) performerMap[r.id] = r.performer.full_name
+      })
+    }
+  } catch { /* migration_v8 not yet run */ }
+
+  const reportsWithPerformer = (reports ?? []).map((r: any) => ({
+    ...r,
+    performer: performerMap[r.id] ? { full_name: performerMap[r.id] } : null,
+  }))
+
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <div className="flex items-center gap-3">
@@ -41,7 +58,7 @@ export default async function GreenEyesHistoryPage() {
       </div>
 
       <GreenEyesHistory
-        reports={(reports ?? []) as any}
+        reports={reportsWithPerformer as any}
         departments={departments ?? []}
       />
     </div>
