@@ -11,6 +11,7 @@ interface HistoryEntry {
   returned_at: string | null
   notes: string | null
   soldier: { full_name: string; rank: string } | null
+  performer: { full_name: string } | null
 }
 
 interface Item {
@@ -211,7 +212,10 @@ export default function SerialLookupClient({ items }: Props) {
                               {STATUS_LABELS[h.status]?.label ?? h.status}
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-slate-400">{h.notes ?? ''}</td>
+                          <td className="px-3 py-2 text-slate-400">
+                            {h.performer && <span className="text-slate-300 ml-1">({h.performer.full_name})</span>}
+                            {h.notes ?? ''}
+                          </td>
                         </tr>
                       ))}
                     </>

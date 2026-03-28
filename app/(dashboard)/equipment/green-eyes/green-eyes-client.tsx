@@ -92,9 +92,10 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
   const saveReport = () => {
     startTransition(async () => {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
       const { data: report, error } = await supabase
         .from('green_eyes_reports')
-        .insert({ report_date: reportDate, department_id: departmentId, template_id: templateId })
+        .insert({ report_date: reportDate, department_id: departmentId, template_id: templateId, performed_by: user?.id ?? null })
         .select('id').single()
       if (error || !report) return
 

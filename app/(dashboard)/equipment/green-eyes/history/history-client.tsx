@@ -23,6 +23,7 @@ interface Report {
   created_at: string
   department: { id: number; name: string } | null
   template: { id: number; name: string } | null
+  performer: { full_name: string } | null
   checks: Check[]
 }
 
@@ -198,6 +199,7 @@ export default function GreenEyesHistory({ reports: initialReports, departments 
                       {report.template ? `תבנית: ${report.template.name} · ` : ''}
                       {soldiers.length} חיילים · {presentItems}/{totalItems} פריטים
                       {!allOk && <span className="text-amber-500"> · {soldiers.filter(s => s.checks.some(c => !c.is_present)).length} לא תקינים</span>}
+                      {report.performer && <span className="text-slate-300"> · {report.performer.full_name}</span>}
                     </p>
                   </div>
                   {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}

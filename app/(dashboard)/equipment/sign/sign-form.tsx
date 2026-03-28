@@ -104,9 +104,11 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
     if (!confirm(`לזכות את "${name}" מהחייל?`)) return
     startTransition(async () => {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
       await supabase.from('equipment_assignments').update({
         status: 'returned',
         returned_at: new Date().toISOString(),
+        performed_by: user?.id ?? null,
       }).eq('id', id)
       if (soldierId) fetchExisting(soldierId)
       router.refresh()
@@ -117,6 +119,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
     if (!transferTargetId) return
     startTransition(async () => {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
       // Get the original assignment details
       const { data: original } = await supabase
         .from('equipment_assignments')
@@ -129,6 +132,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
       await supabase.from('equipment_assignments').update({
         status: 'transferred',
         returned_at: new Date().toISOString(),
+        performed_by: user?.id ?? null,
       }).eq('id', id)
 
       // Create new assignment for target soldier
@@ -139,6 +143,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
         status: 'active',
         signed_at: new Date().toISOString(),
         returned_at: null,
+        performed_by: user?.id ?? null,
       })
 
       setTransferringId(null)
@@ -242,6 +247,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
     setResult(null)
     startTransition(async () => {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
       const errors: string[] = []
       let success = 0
 
@@ -254,6 +260,7 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
           condition_in: row.condition_in,
           attribute: row.attribute || null,
           notes: row.notes || null,
+          performed_by: user?.id ?? null,
           ...(mode === 'active' ? { signed_at: new Date().toISOString() } : {}),
         }
         if (row.isSerialized) {

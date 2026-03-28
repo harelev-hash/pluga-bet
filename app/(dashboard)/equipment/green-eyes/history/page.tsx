@@ -13,6 +13,7 @@ export default async function GreenEyesHistoryPage() {
         id, report_date, created_at,
         department:departments(id, name),
         template:equipment_templates(id, name),
+        performer:app_users(full_name),
         checks:green_eyes_checks(
           id, is_present, soldier_id,
           soldier:soldiers(full_name, role_in_unit),
