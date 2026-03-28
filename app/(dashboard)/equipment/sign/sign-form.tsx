@@ -259,14 +259,34 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
         if (row.isSerialized) {
           let itemId = row.item_id
           if (!itemId && row.serialInput.trim()) {
-            // Create new equipment_item for this serial number
-            const { data: newItem, error: itemErr } = await supabase
+            // Check if an item with this serial already exists (may be assigned to someone)
+            const { data: existingItem } = await supabase
               .from('equipment_items')
-              .insert({ type_id: row.type_id, serial_number: row.serialInput.trim(), condition: row.condition_in })
-              .select('id')
-              .single()
-            if (itemErr) { errors.push(`${row.typeName}: ${itemErr.message}`); continue }
-            itemId = newItem.id
+              .select('id, equipment_assignments(status, soldier:soldiers(full_name))')
+              .eq('type_id', row.type_id)
+              .eq('serial_number', row.serialInput.trim())
+              .maybeSingle()
+
+            if (existingItem) {
+              const activeAssignment = (existingItem.equipment_assignments as any[])?.find(
+                (a: any) => a.status === 'active' || a.status === 'planned'
+              )
+              if (activeAssignment) {
+                errors.push(`${row.typeName} (${row.serialInput}): הפריט כבר משויך לחייל ${activeAssignment.soldier?.full_name ?? '—'}`)
+                continue
+              }
+              // Item exists but free — reuse it
+              itemId = existingItem.id
+            } else {
+              // No item with this serial — create new
+              const { data: newItem, error: itemErr } = await supabase
+                .from('equipment_items')
+                .insert({ type_id: row.type_id, serial_number: row.serialInput.trim(), condition: row.condition_in })
+                .select('id')
+                .single()
+              if (itemErr) { errors.push(`${row.typeName}: ${itemErr.message}`); continue }
+              itemId = newItem.id
+            }
           }
           payload.item_id = itemId
           payload.quantity = 1
