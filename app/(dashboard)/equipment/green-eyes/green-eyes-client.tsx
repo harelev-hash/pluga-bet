@@ -40,8 +40,9 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
   // assignmentId → true (present) | false (missing) | undefined (unchecked)
   const [checks, setChecks] = useState<Map<number, boolean>>(new Map())
   const [saved, setSaved] = useState(false)
+  const [reportDate, setReportDate] = useState(() => new Date().toISOString().split('T')[0])
 
-  const today = new Date().toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const displayDate = new Date(reportDate + 'T12:00:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
   const templateTypeIds = useMemo(() => {
     if (!templateId) return null
@@ -93,7 +94,7 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
       const supabase = createClient()
       const { data: report, error } = await supabase
         .from('green_eyes_reports')
-        .insert({ report_date: new Date().toISOString().split('T')[0], department_id: departmentId, template_id: templateId })
+        .insert({ report_date: reportDate, department_id: departmentId, template_id: templateId })
         .select('id').single()
       if (error || !report) return
 
@@ -111,7 +112,7 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
   const shareWhatsApp = () => {
     const dept = departments.find(d => d.id === departmentId)
     const tmpl = templateId ? templates.find(t => t.id === templateId) : null
-    let text = `ירוק בעיניים — ${dept?.name ?? ''} — ${today}\n`
+    let text = `ירוק בעיניים — ${dept?.name ?? ''} — ${displayDate}\n`
     if (tmpl) text += `תבנית: ${tmpl.name}\n`
     text += '\n'
     deptSoldiers.forEach(s => {
@@ -131,7 +132,16 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
       <div className="space-y-4" dir="rtl">
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 space-y-5">
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-700">תאריך</label>
+              <input
+                type="date"
+                value={reportDate}
+                onChange={e => setReportDate(e.target.value)}
+                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+              />
+            </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-slate-700">מחלקה</label>
               <select
@@ -226,7 +236,7 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <div>
-                <p className="font-semibold text-slate-800 text-sm">{dept?.name} — {today}</p>
+                <p className="font-semibold text-slate-800 text-sm">{dept?.name} — {displayDate}</p>
                 {tmpl && <p className="text-xs text-slate-400">תבנית: {tmpl.name}</p>}
               </div>
             </div>
@@ -354,7 +364,7 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
       <div className="print-only" dir="rtl" style={{ fontFamily: 'Arial, sans-serif', fontSize: 13 }}>
         <div style={{ borderBottom: '2px solid #222', paddingBottom: 6, marginBottom: 12 }}>
           <h2 style={{ fontSize: 18, fontWeight: 'bold', margin: 0 }}>
-            ירוק בעיניים — {dept?.name} — {today}
+            ירוק בעיניים — {dept?.name} — {displayDate}
           </h2>
           <p style={{ fontSize: 11, color: '#666', margin: '3px 0 0' }}>
             {tmpl ? `תבנית: ${tmpl.name} · ` : ''}סה&quot;כ: {checkedItems}/{totalItems} פריטים · {deptSoldiers.filter(s => soldierAssignments(s.id).every(a => checks.get(a.id))).length}/{deptSoldiers.length} חיילים תקינים
