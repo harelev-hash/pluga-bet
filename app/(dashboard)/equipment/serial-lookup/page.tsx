@@ -6,24 +6,26 @@ import SerialLookupClient from './serial-lookup-client'
 export default async function SerialLookupPage() {
   const supabase = await createClient()
 
-  // Fetch all serialized items with their active/planned assignment (if any)
+  // Fetch all serialized items with ALL assignments (current + history)
   const { data: items } = await supabase
     .from('equipment_items')
     .select(`
       id, serial_number, condition,
       type:equipment_types(id, name, category),
-      assignment:equipment_assignments(
-        status, attribute,
+      assignments:equipment_assignments(
+        id, status, attribute, signed_at, returned_at, notes,
         soldier:soldiers(full_name, rank)
       )
     `)
     .order('serial_number')
 
-  // Flatten: each item may have multiple assignments (history), pick active/planned one
   const processed = (items ?? []).map((item: any) => {
-    const assignments: any[] = Array.isArray(item.assignment) ? item.assignment : item.assignment ? [item.assignment] : []
+    const assignments: any[] = Array.isArray(item.assignments) ? item.assignments : []
     const current = assignments.find((a: any) => a.status === 'active' || a.status === 'planned') ?? null
-    return { ...item, assignment: current }
+    const history = assignments
+      .filter((a: any) => a.status !== 'active' && a.status !== 'planned')
+      .sort((a: any, b: any) => (b.returned_at ?? b.signed_at ?? '').localeCompare(a.returned_at ?? a.signed_at ?? ''))
+    return { ...item, assignment: current, history }
   })
 
   return (
