@@ -350,36 +350,47 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
 
       </div>
 
-      {/* Print-only view */}
-      <div className="print-only" dir="rtl" style={{ fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ borderBottom: '2px solid #333', paddingBottom: 8, marginBottom: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 'bold', margin: 0 }}>ירוק בעיניים — {dept?.name} — {today}</h2>
-          {tmpl && <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0' }}>תבנית: {tmpl.name}</p>}
-          <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0' }}>סה&quot;כ: {checkedItems}/{totalItems}</p>
+      {/* Print-only view — compact summary */}
+      <div className="print-only" dir="rtl" style={{ fontFamily: 'Arial, sans-serif', fontSize: 13 }}>
+        <div style={{ borderBottom: '2px solid #222', paddingBottom: 6, marginBottom: 12 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 'bold', margin: 0 }}>
+            ירוק בעיניים — {dept?.name} — {today}
+          </h2>
+          <p style={{ fontSize: 11, color: '#666', margin: '3px 0 0' }}>
+            {tmpl ? `תבנית: ${tmpl.name} · ` : ''}סה&quot;כ: {checkedItems}/{totalItems} פריטים · {deptSoldiers.filter(s => soldierAssignments(s.id).every(a => checks.get(a.id))).length}/{deptSoldiers.length} חיילים תקינים
+          </p>
         </div>
-        {deptSoldiers.map(soldier => {
-          const sA = soldierAssignments(soldier.id)
-          const cnt = sA.filter(a => checks.get(a.id)).length
-          return (
-            <div key={soldier.id} style={{ marginBottom: 20, pageBreakInside: 'avoid' }}>
-              <div style={{ fontWeight: 'bold', fontSize: 14, background: '#f5f5f5', padding: '4px 8px', marginBottom: 4 }}>
-                {soldier.full_name}{soldier.role_in_unit ? ` — ${soldier.role_in_unit}` : ''} ({cnt}/{sA.length})
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                <tbody>
-                  {sA.map(a => (
-                    <tr key={a.id}>
-                      <td style={{ width: 28, padding: '3px 6px', border: '1px solid #ddd', textAlign: 'center' }}>
-                        {checks.get(a.id) ? '✅' : '☐'}
-                      </td>
-                      <td style={{ padding: '3px 8px', border: '1px solid #ddd' }}>{itemLabel(a)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
-        })}
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: '#f0f0f0' }}>
+              <th style={{ padding: '4px 8px', border: '1px solid #ccc', textAlign: 'right' }}>חייל</th>
+              <th style={{ padding: '4px 8px', border: '1px solid #ccc', textAlign: 'center', width: 60 }}>סטטוס</th>
+              <th style={{ padding: '4px 8px', border: '1px solid #ccc', textAlign: 'right' }}>חסר</th>
+            </tr>
+          </thead>
+          <tbody>
+            {deptSoldiers.map(soldier => {
+              const sA = soldierAssignments(soldier.id)
+              const missing = sA.filter(a => !checks.get(a.id))
+              const allOk = missing.length === 0
+              return (
+                <tr key={soldier.id} style={{ background: allOk ? '#f0fff4' : '#fff' }}>
+                  <td style={{ padding: '4px 8px', border: '1px solid #ddd', fontWeight: 500 }}>
+                    {soldier.full_name}
+                    {soldier.role_in_unit && <span style={{ color: '#888', fontWeight: 'normal' }}> — {soldier.role_in_unit}</span>}
+                  </td>
+                  <td style={{ padding: '4px 8px', border: '1px solid #ddd', textAlign: 'center' }}>
+                    {allOk ? '✅' : `${sA.length - missing.length}/${sA.length}`}
+                  </td>
+                  <td style={{ padding: '4px 8px', border: '1px solid #ddd', color: missing.length ? '#c00' : '#888', fontSize: 11 }}>
+                    {missing.length ? missing.map(itemLabel).join(', ') : '—'}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </>
   )
