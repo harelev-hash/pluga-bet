@@ -215,13 +215,17 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
 
   return (
     <>
-      <style>{`@media print {
-        .no-print { display: none !important; }
-        .print-only { display: block !important; }
-        body { background: white !important; }
-      }
-      .print-only { display: none; }`}
-      </style>
+      <style>{`
+        @page { size: A4; margin: 15mm; }
+        @media print {
+          .no-print { display: none !important; }
+          .print-only { display: block !important; }
+          body { background: white !important; }
+          table { page-break-inside: auto; border-collapse: collapse; }
+          tr { page-break-inside: avoid; }
+        }
+        .print-only { display: none; }
+      `}</style>
 
       <div className="space-y-3" dir="rtl">
 
