@@ -48,7 +48,7 @@ export default async function EquipmentPage() {
         </Link>
         <Link href="/equipment/sign" className="bg-green-600 hover:bg-green-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
           <PenLine className="w-5 h-5" />
-          <span className="font-semibold text-sm">חתמת ציוד ידנית</span>
+          <span className="font-semibold text-sm">החתמת ציוד ידנית</span>
           <span className="text-xs text-green-100">שיוך ציוד לחייל</span>
         </Link>
         <Link href="/equipment/inventory" className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
