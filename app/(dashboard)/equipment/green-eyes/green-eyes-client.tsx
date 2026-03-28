@@ -366,12 +366,14 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
             <tr style={{ background: '#f0f0f0' }}>
               <th style={{ padding: '4px 8px', border: '1px solid #ccc', textAlign: 'right' }}>חייל</th>
               <th style={{ padding: '4px 8px', border: '1px solid #ccc', textAlign: 'center', width: 60 }}>סטטוס</th>
+              <th style={{ padding: '4px 8px', border: '1px solid #ccc', textAlign: 'right' }}>קיים</th>
               <th style={{ padding: '4px 8px', border: '1px solid #ccc', textAlign: 'right' }}>חסר</th>
             </tr>
           </thead>
           <tbody>
             {deptSoldiers.map(soldier => {
               const sA = soldierAssignments(soldier.id)
+              const present = sA.filter(a => checks.get(a.id))
               const missing = sA.filter(a => !checks.get(a.id))
               const allOk = missing.length === 0
               return (
@@ -381,7 +383,10 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
                     {soldier.role_in_unit && <span style={{ color: '#888', fontWeight: 'normal' }}> — {soldier.role_in_unit}</span>}
                   </td>
                   <td style={{ padding: '4px 8px', border: '1px solid #ddd', textAlign: 'center' }}>
-                    {allOk ? '✅' : `${sA.length - missing.length}/${sA.length}`}
+                    {allOk ? '✅' : `${present.length}/${sA.length}`}
+                  </td>
+                  <td style={{ padding: '4px 8px', border: '1px solid #ddd', color: '#2a7a2a', fontSize: 11 }}>
+                    {present.length ? present.map(itemLabel).join(', ') : '—'}
                   </td>
                   <td style={{ padding: '4px 8px', border: '1px solid #ddd', color: missing.length ? '#c00' : '#888', fontSize: 11 }}>
                     {missing.length ? missing.map(itemLabel).join(', ') : '—'}
