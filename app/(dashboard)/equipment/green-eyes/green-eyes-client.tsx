@@ -287,6 +287,7 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
         </div>
 
         {/* Soldier cards */}
+        <div className="no-print space-y-3">
         {deptSoldiers.map(soldier => {
           const sA = soldierAssignments(soldier.id)
           const cnt = sA.filter(a => checks.get(a.id) === true).length
@@ -357,6 +358,7 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
             </div>
           )
         })}
+        </div>
 
       </div>
 
