@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { EquipmentType, EquipmentItem, EquipmentTemplate, EquipmentOwnership } from '@/lib/types/database'
-import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react'
+import { Plus, Trash2, Check, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Pencil, X, ArrowLeftRight, RotateCcw } from 'lucide-react'
 
 interface Soldier { id: number; full_name: string; rank: string; role_in_unit: string | null; department_id: number | null }
 
@@ -58,6 +58,8 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
   const [showExisting, setShowExisting] = useState(true)
   const [editingAssignmentId, setEditingAssignmentId] = useState<number | null>(null)
   const [editAssignmentForm, setEditAssignmentForm] = useState<Partial<ExistingAssignment>>({})
+  const [transferringId, setTransferringId] = useState<number | null>(null)
+  const [transferTargetId, setTransferTargetId] = useState<number | null>(null)
 
   const fetchExisting = (sid: number) => {
     const supabase = createClient()
@@ -93,6 +95,54 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
       if (patch.status === 'active') patch.signed_at = new Date().toISOString()
       await supabase.from('equipment_assignments').update(patch).eq('id', id)
       setEditingAssignmentId(null)
+      if (soldierId) fetchExisting(soldierId)
+      router.refresh()
+    })
+  }
+
+  const returnAssignment = (id: number, name: string) => {
+    if (!confirm(`לזכות את "${name}" מהחייל?`)) return
+    startTransition(async () => {
+      const supabase = createClient()
+      await supabase.from('equipment_assignments').update({
+        status: 'returned',
+        returned_at: new Date().toISOString(),
+      }).eq('id', id)
+      if (soldierId) fetchExisting(soldierId)
+      router.refresh()
+    })
+  }
+
+  const transferAssignment = (id: number) => {
+    if (!transferTargetId) return
+    startTransition(async () => {
+      const supabase = createClient()
+      // Get the original assignment details
+      const { data: original } = await supabase
+        .from('equipment_assignments')
+        .select('*')
+        .eq('id', id)
+        .single()
+      if (!original) return
+
+      // Mark old as transferred
+      await supabase.from('equipment_assignments').update({
+        status: 'transferred',
+        returned_at: new Date().toISOString(),
+      }).eq('id', id)
+
+      // Create new assignment for target soldier
+      const { soldier_id: _old, id: _id, created_at: _ca, returned_at: _ra, ...rest } = original
+      await supabase.from('equipment_assignments').insert({
+        ...rest,
+        soldier_id: transferTargetId,
+        status: 'active',
+        signed_at: new Date().toISOString(),
+        returned_at: null,
+      })
+
+      setTransferringId(null)
+      setTransferTargetId(null)
       if (soldierId) fetchExisting(soldierId)
       router.refresh()
     })
@@ -312,6 +362,20 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
                           {a.status === 'active' ? 'סמן כמיועד' : 'סמן כחתום'}
                         </button>
                         <button
+                          onClick={() => returnAssignment(a.id, a.name)}
+                          title="זכה"
+                          className="p-1 text-slate-400 hover:text-amber-600 transition-colors"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => { setTransferringId(transferringId === a.id ? null : a.id); setTransferTargetId(null) }}
+                          title="העבר לחייל אחר"
+                          className="p-1 text-slate-400 hover:text-purple-600 transition-colors"
+                        >
+                          <ArrowLeftRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           onClick={() => {
                             setEditingAssignmentId(editingAssignmentId === a.id ? null : a.id)
                             setEditAssignmentForm({ status: a.status as any, ownership: a.ownership, quantity: a.quantity, attribute: a.attribute ?? '', condition_in: a.condition_in, notes: a.notes ?? '' })
@@ -328,6 +392,38 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
                         </button>
                       </div>
                     </div>
+
+                    {/* Inline transfer panel */}
+                    {transferringId === a.id && (
+                      <div className="px-3 pb-3 pt-1 bg-purple-50/40 border-t border-purple-100 flex items-end gap-2">
+                        <div className="flex flex-col gap-1 flex-1">
+                          <label className="text-xs text-slate-500">העבר אל חייל</label>
+                          <select
+                            value={transferTargetId ?? ''}
+                            onChange={e => setTransferTargetId(e.target.value ? parseInt(e.target.value) : null)}
+                            className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-300"
+                          >
+                            <option value="">בחר חייל...</option>
+                            {soldiers.filter(s => s.id !== soldierId).map(s => (
+                              <option key={s.id} value={s.id}>{s.full_name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => transferAssignment(a.id)}
+                          disabled={!transferTargetId || isPending}
+                          className="flex items-center gap-1 bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                        >
+                          <ArrowLeftRight className="w-3 h-3" /> העבר
+                        </button>
+                        <button
+                          onClick={() => { setTransferringId(null); setTransferTargetId(null) }}
+                          className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
 
                     {/* Inline edit panel */}
                     {editingAssignmentId === a.id && (

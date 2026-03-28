@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Package, PenLine, LayoutList, Settings, ClipboardCheck, FileSpreadsheet, UserCheck, BarChart2 } from 'lucide-react'
+import { Package, PenLine, LayoutList, Settings, ClipboardCheck, FileSpreadsheet, UserCheck, BarChart2, ScanSearch } from 'lucide-react'
 
 function ConditionBadge({ condition }: { condition: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -55,7 +55,7 @@ export default async function EquipmentPage() {
       {/* דוחות */}
       <div>
         <p className="text-xs font-semibold text-slate-400 mb-2 px-0.5">דוחות</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Link href="/equipment/inventory" className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
             <LayoutList className="w-5 h-5" />
             <span className="font-semibold text-sm">מלאי</span>
@@ -63,8 +63,13 @@ export default async function EquipmentPage() {
           </Link>
           <Link href="/equipment/report" className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
             <BarChart2 className="w-5 h-5" />
-            <span className="font-semibold text-sm">דוח ציוד לפי חייל</span>
+            <span className="font-semibold text-sm">דוח לפי חייל</span>
             <span className="text-xs text-violet-100">מה יש לכל חייל</span>
+          </Link>
+          <Link href="/equipment/serial-lookup" className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
+            <ScanSearch className="w-5 h-5" />
+            <span className="font-semibold text-sm">מציאת פריט לפי צ&apos;</span>
+            <span className="text-xs text-cyan-100">חיפוש לפי מ״ס</span>
           </Link>
         </div>
       </div>
