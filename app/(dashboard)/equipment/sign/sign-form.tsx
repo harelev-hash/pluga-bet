@@ -258,8 +258,21 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
         }
         if (row.isSerialized) {
           let itemId = row.item_id
-          if (!itemId && row.serialInput.trim()) {
-            // Check if an item with this serial already exists (may be assigned to someone)
+
+          // If item_id already set from datalist, verify it's not currently assigned
+          if (itemId) {
+            const { data: conflict } = await supabase
+              .from('equipment_assignments')
+              .select('status, soldier:soldiers(full_name)')
+              .eq('item_id', itemId)
+              .in('status', ['active', 'planned'])
+              .maybeSingle()
+            if (conflict) {
+              errors.push(`${row.typeName} (${row.serialInput}): הפריט כבר משויך לחייל ${(conflict.soldier as any)?.full_name ?? '—'}`)
+              continue
+            }
+          } else if (row.serialInput.trim()) {
+            // No datalist match — check by serial number in DB
             const { data: existingItem } = await supabase
               .from('equipment_items')
               .select('id, equipment_assignments(status, soldier:soldiers(full_name))')
