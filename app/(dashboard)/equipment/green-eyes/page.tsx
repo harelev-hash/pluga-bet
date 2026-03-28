@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, History } from 'lucide-react'
 import GreenEyesClient from './green-eyes-client'
 
 export default async function GreenEyesPage() {
@@ -36,10 +36,17 @@ export default async function GreenEyesPage() {
         <Link href="/equipment" className="text-slate-400 hover:text-slate-600 transition-colors">
           <ArrowRight className="w-5 h-5" />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-slate-800">ירוק בעיניים</h1>
           <p className="text-slate-500 text-sm mt-0.5">בדיקת ציוד יומית לפי מחלקה</p>
         </div>
+        <Link
+          href="/equipment/green-eyes/history"
+          className="flex items-center gap-1.5 px-3 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg text-sm transition-colors"
+        >
+          <History className="w-4 h-4" />
+          דוחות קודמים
+        </Link>
       </div>
 
       <GreenEyesClient
