@@ -171,6 +171,7 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
   const handleImport = () => {
     startTransition(async () => {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
       const skipped: string[] = []
       let kitsCreated = 0
       let assignmentsCreated = 0
@@ -228,6 +229,7 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
             quantity: 1,
             status: 'planned',
             condition_in: 'serviceable',
+            performed_by: user?.id ?? null,
           })
           if (!error) assignmentsCreated++
         }
@@ -244,6 +246,7 @@ export default function ImportKitsForm({ soldiers, types, existingItems }: Props
             attribute: item.attribute || null,
             status: 'planned',
             condition_in: 'serviceable',
+            performed_by: user?.id ?? null,
           })
           if (!error) assignmentsCreated++
           else skipped.push(`${row.soldier.full_name} — ${item.typeName}: ${error.message}`)

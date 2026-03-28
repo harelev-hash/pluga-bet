@@ -91,7 +91,8 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
   const saveAssignmentEdit = (id: number) => {
     startTransition(async () => {
       const supabase = createClient()
-      const patch: Record<string, unknown> = { ...editAssignmentForm }
+      const { data: { user } } = await supabase.auth.getUser()
+      const patch: Record<string, unknown> = { ...editAssignmentForm, performed_by: user?.id ?? null }
       if (patch.status === 'active') patch.signed_at = new Date().toISOString()
       await supabase.from('equipment_assignments').update(patch).eq('id', id)
       setEditingAssignmentId(null)
@@ -389,8 +390,10 @@ export default function SignForm({ soldiers, types, items, templates, currentPer
                             const newStatus = a.status === 'active' ? 'planned' : 'active'
                             startTransition(async () => {
                               const supabase = createClient()
+                              const { data: { user } } = await supabase.auth.getUser()
                               await supabase.from('equipment_assignments').update({
                                 status: newStatus,
+                                performed_by: user?.id ?? null,
                                 ...(newStatus === 'active' ? { signed_at: new Date().toISOString() } : {}),
                               }).eq('id', a.id)
                               if (soldierId) fetchExisting(soldierId)

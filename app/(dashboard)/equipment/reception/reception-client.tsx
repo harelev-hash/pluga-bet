@@ -47,6 +47,7 @@ export default function ReceptionClient({ soldierGroups, activeSoldierIds, curre
     setConfirming(soldierId)
     startTransition(async () => {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
       const now = new Date().toISOString()
 
       const { error } = await supabase
@@ -55,6 +56,7 @@ export default function ReceptionClient({ soldierGroups, activeSoldierIds, curre
           status: 'active',
           signed_at: now,
           period_id: currentPeriodId,
+          performed_by: user?.id ?? null,
         })
         .in('id', itemIds)
 
