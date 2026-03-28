@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Package, PenLine, LayoutList, Settings, ClipboardCheck, FileSpreadsheet, UserCheck } from 'lucide-react'
+import { Package, PenLine, LayoutList, Settings, ClipboardCheck, FileSpreadsheet, UserCheck, BarChart2 } from 'lucide-react'
 
 function ConditionBadge({ condition }: { condition: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -65,6 +65,11 @@ export default async function EquipmentPage() {
           <ClipboardCheck className="w-5 h-5" />
           <span className="font-semibold text-sm">תבניות אפיון</span>
           <span className="text-xs text-slate-300">לוחם, מטול, נגב...</span>
+        </Link>
+        <Link href="/equipment/report" className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
+          <BarChart2 className="w-5 h-5" />
+          <span className="font-semibold text-sm">דוח ציוד לפי חייל</span>
+          <span className="text-xs text-violet-100">מה יש לכל חייל</span>
         </Link>
       </div>
 
