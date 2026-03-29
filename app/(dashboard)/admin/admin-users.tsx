@@ -3,13 +3,13 @@
 import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_LABELS } from '@/lib/utils'
-import type { AppUser } from '@/lib/types/database'
+import type { AppUser, UserRole } from '@/lib/types/database'
 import { formatDateTime } from '@/lib/utils'
 import { Trash2 } from 'lucide-react'
 
-const ROLES = ['sys_admin', 'hr', 'rsfp', 'commander', 'viewer'] as const
+interface RoleOption { key: string; label: string }
 
-export default function AdminUsers({ users: initial }: { users: AppUser[] }) {
+export default function AdminUsers({ users: initial, roles }: { users: AppUser[]; roles: RoleOption[] }) {
   const [isPending, startTransition] = useTransition()
   const [users, setUsers] = useState(initial)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -70,8 +70,8 @@ export default function AdminUsers({ users: initial }: { users: AppUser[] }) {
                     disabled={isPending}
                     className="border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
                   >
-                    {ROLES.map(r => (
-                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    {roles.map(r => (
+                      <option key={r.key} value={r.key}>{r.label}</option>
                     ))}
                   </select>
                 </td>

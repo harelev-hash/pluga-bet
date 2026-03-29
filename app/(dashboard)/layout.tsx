@@ -19,17 +19,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!appUser || !appUser.is_active) redirect('/pending')
 
-  // Fetch permissions for this role (fall back to defaults)
+  // Fetch permissions + label for this role (fall back to defaults)
   const { data: rolePerms } = await supabase
     .from('role_permissions')
-    .select('permissions')
+    .select('permissions, label')
     .eq('role', appUser.role)
     .single()
 
   const permissions: string[] = rolePerms?.permissions ?? DEFAULT_ROLE_PERMISSIONS[appUser.role] ?? []
 
   const displayName = appUser?.full_name ?? user.email ?? 'משתמש'
-  const roleLabel = appUser?.role ? ROLE_LABELS[appUser.role as UserRole] : ''
+  const roleLabel = rolePerms?.label || ROLE_LABELS[appUser.role as UserRole] || appUser.role
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50" dir="rtl">

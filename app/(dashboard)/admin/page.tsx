@@ -71,7 +71,7 @@ export default async function AdminPage({
         ))}
       </div>
 
-      {tab === 'users' && <AdminUsers users={users ?? []} />}
+      {tab === 'users' && <AdminUsers users={users ?? []} roles={roles.map(r => ({ key: r.key, label: r.label }))} />}
       {tab === 'periods' && <AdminPeriod periods={periods ?? []} />}
       {tab === 'permissions' && <AdminPermissions roles={roles} />}
     </div>
