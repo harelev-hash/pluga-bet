@@ -10,11 +10,11 @@ export default async function MelmHandleDashboardPage() {
     supabase
       .from('melm_requests')
       .select(`
-        id, title, status, created_at, request_date,
+        id, title, status, created_at, request_date, closed_by, closed_at,
         department:departments(id, name),
         items:melm_items(
           id, item_kind, quantity_requested, notes, free_text,
-          resap_status, resap_notes,
+          resap_status, resap_notes, resap_performed_by, resap_performed_at,
           soldier:soldiers(full_name),
           type:equipment_types(name)
         )
@@ -22,6 +22,34 @@ export default async function MelmHandleDashboardPage() {
       .order('created_at', { ascending: false }),
     supabase.from('departments').select('id, name').order('display_order'),
   ])
+
+  // Collect all user UUIDs from closer + item performers
+  const allUuids = new Set<string>()
+  for (const r of requests ?? []) {
+    if ((r as any).closed_by) allUuids.add((r as any).closed_by)
+    for (const item of (r as any).items ?? []) {
+      if (item.resap_performed_by) allUuids.add(item.resap_performed_by)
+    }
+  }
+
+  let userNameMap: Record<string, string> = {}
+  if (allUuids.size > 0) {
+    const { data: users } = await supabase
+      .from('app_users')
+      .select('id, full_name')
+      .in('id', Array.from(allUuids))
+    ;(users ?? []).forEach((u: any) => { userNameMap[u.id] = u.full_name })
+  }
+
+  // Merge names into data
+  const enrichedRequests = (requests ?? []).map((r: any) => ({
+    ...r,
+    closedByName: r.closed_by ? (userNameMap[r.closed_by] ?? null) : null,
+    items: (r.items ?? []).map((item: any) => ({
+      ...item,
+      performerName: item.resap_performed_by ? (userNameMap[item.resap_performed_by] ?? null) : null,
+    })),
+  }))
 
   return (
     <div className="max-w-4xl mx-auto space-y-5" dir="rtl">
@@ -36,7 +64,7 @@ export default async function MelmHandleDashboardPage() {
       </div>
 
       <HandleDashboard
-        requests={requests ?? []}
+        requests={enrichedRequests}
         departments={departments ?? []}
       />
     </div>

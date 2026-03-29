@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { ClipboardList, Wrench, BarChart2, ChevronLeft } from 'lucide-react'
+import { ClipboardList, Wrench, BarChart2, ChevronLeft, Lock } from 'lucide-react'
 import { formatDate, MELM_STATUS_LABELS } from '@/lib/utils'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -20,7 +20,7 @@ export default async function MelmPage({
 
   let query = supabase
     .from('melm_requests')
-    .select('id, title, status, created_at, request_date, department:departments(name)')
+    .select('id, title, status, created_at, request_date, closed_by, closed_at, department:departments(name)')
     .order('created_at', { ascending: false })
 
   if (status === 'closed') query = query.eq('status', 'closed')
@@ -29,7 +29,15 @@ export default async function MelmPage({
 
   const { data: requests } = await query
 
-  const openCount = (requests ?? []).filter((r: any) => r.status === 'open' || r.status === 'in_progress').length
+  const openCount = (requests ?? []).filter((r: any) => r.status !== 'closed').length
+
+  // Look up closer names (RLS-safe)
+  const closerUuids = [...new Set((requests ?? []).map((r: any) => r.closed_by).filter(Boolean))]
+  let closerNameMap: Record<string, string> = {}
+  if (closerUuids.length > 0) {
+    const { data: users } = await supabase.from('app_users').select('id, full_name').in('id', closerUuids)
+    ;(users ?? []).forEach((u: any) => { closerNameMap[u.id] = u.full_name })
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6" dir="rtl">
@@ -89,31 +97,44 @@ export default async function MelmPage({
 
       {/* Requests list */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 divide-y divide-slate-50">
-        {requests && requests.length > 0 ? requests.map((r: any) => (
-          <Link
-            key={r.id}
-            href={`/melm/${r.id}`}
-            className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="font-medium text-slate-800">{r.title ?? `בקשה #${r.id}`}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[r.status] ?? ''}`}>
-                  {MELM_STATUS_LABELS[r.status as keyof typeof MELM_STATUS_LABELS] ?? r.status}
-                </span>
+        {requests && requests.length > 0 ? requests.map((r: any) => {
+          const closerName = r.closed_by ? closerNameMap[r.closed_by] : null
+          return (
+            <Link
+              key={r.id}
+              href={`/melm/${r.id}`}
+              className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-medium text-slate-800">{r.title ?? `בקשה #${r.id}`}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[r.status] ?? ''}`}>
+                    {MELM_STATUS_LABELS[r.status as keyof typeof MELM_STATUS_LABELS] ?? r.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
+                  <span>{(r.department as any)?.name ?? 'ללא מחלקה'}</span>
+                  <span>·</span>
+                  <span>{formatDate(r.request_date ?? r.created_at)}</span>
+                  {r.status === 'closed' && (
+                    <>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        נסגר{r.closed_at ? ` ${formatDate(r.closed_at)}` : ''}
+                        {closerName ? ` ע"י ${closerName}` : ''}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <span>{(r.department as any)?.name ?? 'ללא מחלקה'}</span>
-                <span>·</span>
-                <span>{formatDate(r.request_date ?? r.created_at)}</span>
+              <div className="flex items-center gap-1 text-xs text-blue-600 font-medium shrink-0">
+                <span>כנס לטיפול</span>
+                <ChevronLeft className="w-4 h-4" />
               </div>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-blue-600 font-medium shrink-0">
-              <span>כנס לטיפול</span>
-              <ChevronLeft className="w-4 h-4" />
-            </div>
-          </Link>
-        )) : (
+            </Link>
+          )
+        }) : (
           <p className="px-4 py-10 text-center text-slate-400">אין בקשות מל&quot;מ</p>
         )}
       </div>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, ChevronLeft, Check, Clock, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronLeft, Check, Clock, X, Lock } from 'lucide-react'
 
 interface MelmItem {
   id: number
@@ -12,6 +12,8 @@ interface MelmItem {
   free_text: string | null
   resap_status: string | null
   resap_notes: string | null
+  resap_performed_at: string | null
+  performerName: string | null
   soldier: { full_name: string } | null
   type: { name: string } | null
 }
@@ -22,6 +24,8 @@ interface Request {
   status: string
   created_at: string
   request_date: string | null
+  closed_at: string | null
+  closedByName: string | null
   department: { id: number; name: string } | null
   items: MelmItem[]
 }
@@ -40,17 +44,15 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   open: 'פתוח', in_progress: 'בטיפול', resolved: 'טופל', closed: 'סגור',
 }
-
 const KIND_LABEL: Record<string, string> = {
   wear: 'בלאי', missing_soldier: 'חסר לחייל',
   missing_dept: 'חסר למחלקה', free_text: 'מלל חופשי', equipment: 'ציוד',
 }
-
-const RESAP_CONFIG: Record<string, { icon: React.ReactNode; cls: string }> = {
-  supplied:  { icon: <Check className="w-3 h-3" />,  cls: 'text-green-600 bg-green-50' },
-  long_term: { icon: <Clock className="w-3 h-3" />,  cls: 'text-amber-600 bg-amber-50' },
-  rejected:  { icon: <X className="w-3 h-3" />,      cls: 'text-red-500 bg-red-50' },
-  pending:   { icon: null,                            cls: 'text-slate-400 bg-slate-50' },
+const RESAP_CONFIG: Record<string, { icon: React.ReactNode; cls: string; label: string }> = {
+  supplied:  { icon: <Check className="w-3 h-3" />,  cls: 'text-green-600 bg-green-50',  label: 'סופק' },
+  long_term: { icon: <Clock className="w-3 h-3" />,  cls: 'text-amber-600 bg-amber-50',  label: 'טיפול ארוך' },
+  rejected:  { icon: <X className="w-3 h-3" />,      cls: 'text-red-500 bg-red-50',      label: 'דחוי' },
+  pending:   { icon: null,                            cls: 'text-slate-400 bg-slate-50',  label: 'ממתין' },
 }
 
 const formatDate = (d: string | null) =>
@@ -58,7 +60,7 @@ const formatDate = (d: string | null) =>
 
 export default function HandleDashboard({ requests, departments }: Props) {
   const [filterDept, setFilterDept] = useState('')
-  const [filterStatus, setFilterStatus] = useState('open')  // default: not closed
+  const [filterStatus, setFilterStatus] = useState('open')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
@@ -110,12 +112,10 @@ export default function HandleDashboard({ requests, departments }: Props) {
         </div>
       </div>
 
-      {/* Results count */}
       <p className="text-xs text-slate-400 px-1">
         {filtered.length} בקשות · {pendingCount} ממתינות לטיפול
       </p>
 
-      {/* Request cards */}
       {filtered.length === 0 && (
         <div className="bg-white rounded-xl border border-slate-100 py-12 text-center text-slate-400 text-sm">
           אין בקשות
@@ -125,7 +125,7 @@ export default function HandleDashboard({ requests, departments }: Props) {
       {filtered.map(r => {
         const isOpen = expanded.has(r.id)
         const pendingItems = r.items.filter(i => !i.resap_status || i.resap_status === 'pending').length
-        const totalItems = r.items.length
+        const isClosed = r.status === 'closed'
 
         return (
           <div key={r.id} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -146,12 +146,22 @@ export default function HandleDashboard({ requests, departments }: Props) {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
                   <span>{r.department?.name ?? 'ללא מחלקה'}</span>
                   <span>·</span>
                   <span>{formatDate(r.request_date ?? r.created_at)}</span>
                   <span>·</span>
-                  <span>{totalItems} סעיפים</span>
+                  <span>{r.items.length} סעיפים</span>
+                  {isClosed && (
+                    <>
+                      <span>·</span>
+                      <span className="flex items-center gap-1 text-slate-400">
+                        <Lock className="w-3 h-3" />
+                        נסגר{r.closed_at ? ` ${formatDate(r.closed_at)}` : ''}
+                        {r.closedByName ? ` ע"י ${r.closedByName}` : ''}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -180,32 +190,42 @@ export default function HandleDashboard({ requests, departments }: Props) {
                         const rc = RESAP_CONFIG[item.resap_status ?? 'pending'] ?? RESAP_CONFIG.pending
                         const desc = kind === 'free_text'
                           ? item.free_text
-                          : kind === 'wear' || kind === 'missing_soldier'
+                          : (kind === 'wear' || kind === 'missing_soldier')
                             ? `${item.soldier?.full_name ?? '—'} — ${item.type?.name ?? item.free_text ?? '—'}`
                             : (item.type?.name ?? item.free_text ?? '—')
 
                         return (
                           <tr key={item.id} className="hover:bg-slate-50/50">
-                            <td className="px-4 py-2.5 text-xs text-slate-400 w-24 shrink-0">
+                            <td className="px-4 py-2 text-xs text-slate-400 w-24 shrink-0">
                               {KIND_LABEL[kind] ?? kind}
                             </td>
-                            <td className="px-4 py-2.5 text-slate-700">
+                            <td className="px-4 py-2 text-slate-700">
                               {desc}
-                              {item.quantity_requested > 1 && <span className="text-slate-400 text-xs mr-1">×{item.quantity_requested}</span>}
+                              {item.quantity_requested > 1 && (
+                                <span className="text-slate-400 text-xs mr-1">×{item.quantity_requested}</span>
+                              )}
                             </td>
-                            <td className="px-4 py-2.5 text-xs text-slate-400 max-w-[120px] truncate">
+                            <td className="px-4 py-2 text-xs text-slate-400 max-w-[100px] truncate">
                               {item.notes ?? ''}
                             </td>
-                            <td className="px-4 py-2.5">
+                            <td className="px-4 py-2">
                               <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full w-fit ${rc.cls}`}>
-                                {rc.icon}
-                                {item.resap_status === 'supplied' ? 'סופק' :
-                                 item.resap_status === 'long_term' ? 'טיפול ארוך' :
-                                 item.resap_status === 'rejected' ? 'דחוי' : 'ממתין'}
+                                {rc.icon} {rc.label}
                               </span>
                             </td>
-                            <td className="px-4 py-2.5 text-xs text-slate-400 max-w-[120px] truncate">
-                              {item.resap_notes ?? ''}
+                            {/* Performer attribution */}
+                            <td className="px-4 py-2 text-xs text-slate-400 max-w-[140px]">
+                              {item.performerName && item.resap_status !== 'pending' && (
+                                <span title={item.resap_performed_at ? formatDate(item.resap_performed_at) : ''}>
+                                  ע&quot;י {item.performerName}
+                                  {item.resap_performed_at && (
+                                    <span className="text-slate-300 mr-1">· {formatDate(item.resap_performed_at)}</span>
+                                  )}
+                                </span>
+                              )}
+                              {item.resap_notes && (
+                                <span className="block text-slate-300 truncate">{item.resap_notes}</span>
+                              )}
                             </td>
                           </tr>
                         )
