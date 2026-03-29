@@ -25,10 +25,11 @@ interface SoldierGroup {
 interface Props {
   soldierGroups: SoldierGroup[]
   activeSoldierIds: number[]
+  activeSoldierCount: number
   currentPeriodId: number | null
 }
 
-export default function ReceptionClient({ soldierGroups, activeSoldierIds, currentPeriodId }: Props) {
+export default function ReceptionClient({ soldierGroups, activeSoldierIds, activeSoldierCount, currentPeriodId }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [expanded, setExpanded] = useState<number | null>(null)
@@ -85,7 +86,7 @@ export default function ReceptionClient({ soldierGroups, activeSoldierIds, curre
             <Clock className="w-4 h-4" /> {pending.length} ממתינים
           </span>
           <span className="flex items-center gap-1.5 text-green-600 font-medium">
-            <CheckCircle2 className="w-4 h-4" /> {done.length} נקלטו
+            <CheckCircle2 className="w-4 h-4" /> {activeSoldierCount} נקלטו
           </span>
         </div>
       </div>

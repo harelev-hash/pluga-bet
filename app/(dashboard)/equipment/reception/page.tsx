@@ -70,6 +70,7 @@ export default async function ReceptionPage() {
       <ReceptionClient
         soldierGroups={soldierGroups as any}
         activeSoldierIds={[...activeSoldierIds]}
+        activeSoldierCount={activeSoldierIds.size}
         currentPeriodId={currentPeriod?.id ?? null}
       />
     </div>
