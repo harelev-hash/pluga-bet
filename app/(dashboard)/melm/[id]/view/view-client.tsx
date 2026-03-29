@@ -108,10 +108,26 @@ export default function ViewClient(props: Props) {
       {/* Print CSS */}
       <style>{`
         @media print {
-          @page { size: A4; margin: 15mm; }
+          @page { size: A4; margin: 12mm 15mm; }
           .no-print { display: none !important; }
           .print-card { break-inside: avoid; }
-          body { font-size: 12px; }
+
+          /* Compact header */
+          .print-card.header-card { padding: 8px 12px !important; margin-bottom: 6px !important; }
+          .print-card.header-card h2 { font-size: 14px !important; margin-bottom: 1px !important; }
+          .print-card.header-card p { font-size: 10px !important; margin: 0 !important; }
+
+          /* Compact item cards */
+          .print-card { padding: 5px 10px !important; border-radius: 4px !important; box-shadow: none !important; }
+          .print-items { gap: 3px !important; display: flex; flex-direction: column; }
+
+          /* Shrink text inside items */
+          .print-card .item-kind-label { font-size: 9px !important; }
+          .print-card .item-desc { font-size: 11px !important; margin-top: 0 !important; }
+          .print-card .item-notes { font-size: 9px !important; margin-top: 1px !important; }
+          .print-card .resap-badge { font-size: 9px !important; padding: 1px 6px !important; }
+          .print-card .resap-details { margin-top: 3px !important; padding-top: 3px !important; }
+          .print-card .resap-details p { font-size: 9px !important; margin: 0 !important; }
         }
       `}</style>
 
@@ -134,7 +150,7 @@ export default function ViewClient(props: Props) {
       </div>
 
       {/* Request header */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 print-card">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 print-card header-card">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold text-slate-800">{title}</h2>
@@ -157,7 +173,7 @@ export default function ViewClient(props: Props) {
       </div>
 
       {/* Items */}
-      <div className="space-y-3">
+      <div className="space-y-3 print-items">
         {items.map((item, idx) => {
           const kind = item.item_kind ?? 'equipment'
           const resap = RESAP_CONFIG[item.resap_status ?? 'pending'] ?? RESAP_CONFIG.pending
@@ -169,27 +185,27 @@ export default function ViewClient(props: Props) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide item-kind-label">
                     {idx + 1}. {KIND_LABEL[kind] ?? kind}
                   </span>
-                  <p className="text-slate-800 font-medium mt-0.5">
+                  <p className="text-slate-800 font-medium mt-0.5 item-desc">
                     {itemDescription(item)}
                     {item.quantity_requested > 1 && (
                       <span className="text-slate-400 text-sm mr-1"> ×{item.quantity_requested}</span>
                     )}
                   </p>
                   {item.notes && (
-                    <p className="text-xs text-slate-400 mt-0.5">הערת סמל: {item.notes}</p>
+                    <p className="text-xs text-slate-400 mt-0.5 item-notes">הערת סמל: {item.notes}</p>
                   )}
                 </div>
-                <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${resap.cls}`}>
+                <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium shrink-0 resap-badge ${resap.cls}`}>
                   {resap.icon}{resap.label}
                 </span>
               </div>
 
               {/* Resap details */}
               {(item.resap_notes || item.performerName) && (
-                <div className="mt-2.5 pt-2.5 border-t border-slate-100 space-y-0.5">
+                <div className="mt-2.5 pt-2.5 border-t border-slate-100 space-y-0.5 resap-details">
                   {item.performerName && item.resap_status !== 'pending' && (
                     <p className="text-xs text-slate-400">
                       טופל ע&quot;י {item.performerName}
