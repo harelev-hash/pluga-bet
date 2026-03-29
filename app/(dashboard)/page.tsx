@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate, todayISO, ATTENDANCE_LABELS } from '@/lib/utils'
-import { Users, UserCheck, Package, RefreshCw, ClipboardList, Target } from 'lucide-react'
+import { Users, UserCheck, Eye, RefreshCw, ClipboardList, Target, Package } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
@@ -161,7 +161,7 @@ export default async function DashboardPage() {
             <ClipboardList className="w-4 h-4" />
             מעקב חדש
           </Link>
-          <Link href="/melm/new" className="flex items-center gap-2 bg-orange-50 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors">
+          <Link href="/melm/request" className="flex items-center gap-2 bg-orange-50 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors">
             <RefreshCw className="w-4 h-4" />
             מל&quot;מ חדש
           </Link>
@@ -169,9 +169,13 @@ export default async function DashboardPage() {
             <Target className="w-4 h-4" />
             שיבוץ יומי
           </Link>
-          <Link href="/soldiers/import" className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">
+          <Link href="/equipment/green-eyes" className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors">
+            <Eye className="w-4 h-4" />
+            ירוק בעיניים
+          </Link>
+          <Link href="/equipment/sign" className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">
             <Package className="w-4 h-4" />
-            ייבוא מאקסל
+            החתמת ציוד
           </Link>
         </div>
       </div>

@@ -9,10 +9,10 @@ export default async function MelmAnalyticsPage() {
   const [{ data: requests }, { data: items }] = await Promise.all([
     supabase
       .from('melm_requests')
-      .select('id, status, department_id, request_date, created_at, department:departments(name)'),
+      .select('id, status, department_id, request_date, created_at, department:departments(id, name)'),
     supabase
       .from('melm_items')
-      .select('id, request_id, item_kind, quantity_requested, resap_status, free_text, type:equipment_types(id, name, category), soldier:soldiers(department_id)'),
+      .select('id, request_id, item_kind, quantity_requested, resap_status, free_text, type:equipment_types(id, name, category), soldier:soldiers(id, full_name, department_id, departments(name))'),
   ])
 
   return (

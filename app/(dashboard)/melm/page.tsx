@@ -23,8 +23,9 @@ export default async function MelmPage({
     .select('id, title, status, created_at, request_date, department:departments(name)')
     .order('created_at', { ascending: false })
 
-  if (status && status !== 'all') query = query.eq('status', status)
-  else if (!status) query = query.in('status', ['open', 'in_progress'])
+  if (status === 'closed') query = query.eq('status', 'closed')
+  else if (status === 'all') { /* no filter */ }
+  else query = query.neq('status', 'closed')
 
   const { data: requests } = await query
 
@@ -49,7 +50,7 @@ export default async function MelmPage({
         </Link>
 
         <Link
-          href="/melm"
+          href="/melm/handle"
           className="flex flex-col items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl p-8 shadow-sm transition-colors relative"
         >
           <Wrench className="w-10 h-10" />
@@ -69,9 +70,6 @@ export default async function MelmPage({
           {[
             { value: '', label: 'פתוחים' },
             { value: 'all', label: 'הכל' },
-            { value: 'open', label: 'פתוח' },
-            { value: 'in_progress', label: 'בטיפול' },
-            { value: 'resolved', label: 'טופל' },
             { value: 'closed', label: 'סגור' },
           ].map(opt => (
             <Link
