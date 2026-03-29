@@ -11,7 +11,7 @@ export default async function InventoryPage() {
     supabase.from('equipment_items').select('*'),
     supabase
       .from('equipment_assignments')
-      .select('*, soldier:soldiers(id, full_name, rank, department_id)')
+      .select('*, soldier:soldiers!soldier_id(id, full_name, rank, department_id)')
       .in('status', ['active', 'planned']),
   ])
 

@@ -12,7 +12,7 @@ export default async function ReceptionPage() {
     .select(`
       id, quantity, attribute, condition_in, notes,
       item_id, type_id,
-      soldier:soldiers(id, full_name, rank, role_in_unit, department_id),
+      soldier:soldiers!soldier_id(id, full_name, rank, role_in_unit, department_id),
       item:equipment_items(id, serial_number, type:equipment_types(id, name)),
       type:equipment_types(id, name)
     `)

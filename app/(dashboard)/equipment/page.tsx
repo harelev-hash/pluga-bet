@@ -18,7 +18,7 @@ export default async function EquipmentPage() {
   const [{ data: assignments }, { data: types }] = await Promise.all([
     supabase
       .from('equipment_assignments')
-      .select('id, condition_in, attribute, quantity, signed_at, soldier:soldiers(id, full_name, rank), type:equipment_types(name), item:equipment_items(serial_number, type:equipment_types(name))')
+      .select('id, condition_in, attribute, quantity, signed_at, soldier:soldiers!soldier_id(id, full_name, rank), type:equipment_types(name), item:equipment_items(serial_number, type:equipment_types(name))')
       .eq('status', 'active')
       .order('signed_at', { ascending: false })
       .limit(20),
