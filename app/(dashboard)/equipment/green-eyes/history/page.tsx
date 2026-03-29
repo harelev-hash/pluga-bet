@@ -27,18 +27,16 @@ export default async function GreenEyesHistoryPage() {
     supabase.from('departments').select('id, name').order('display_order'),
   ])
 
-  // Try to fetch performer names separately (requires migration_v8)
+  // Fetch performer names separately to avoid RLS breaking the main query
   let performerMap: Record<number, string> = {}
-  try {
-    const { data: withPerformer } = await supabase
-      .from('green_eyes_reports')
-      .select('id, performer:app_users(full_name)')
-    if (withPerformer) {
-      withPerformer.forEach((r: any) => {
-        if (r.performer?.full_name) performerMap[r.id] = r.performer.full_name
-      })
-    }
-  } catch { /* migration_v8 not yet run */ }
+  const { data: withPerformer, error: perfError } = await supabase
+    .from('green_eyes_reports')
+    .select('id, performer:app_users(full_name)')
+  if (!perfError && withPerformer) {
+    withPerformer.forEach((r: any) => {
+      if (r.performer?.full_name) performerMap[r.id] = r.performer.full_name
+    })
+  }
 
   const reportsWithPerformer = (reports ?? []).map((r: any) => ({
     ...r,

@@ -14,16 +14,30 @@ export default async function SerialLookupPage() {
       type:equipment_types(id, name, category),
       assignments:equipment_assignments(
         id, status, attribute, signed_at, returned_at, notes,
-        soldier:soldiers(full_name, rank),
-        performer:app_users(full_name)
+        soldier:soldiers(full_name, rank)
       )
     `)
     .order('serial_number')
 
+  // Fetch performer names separately to avoid RLS breaking the main query
+  let performerMap: Record<number, string> = {}
+  const { data: performerRows, error: perfError } = await supabase
+    .from('equipment_assignments')
+    .select('id, performer:app_users(full_name)')
+  if (!perfError && performerRows) {
+    performerRows.forEach((r: any) => {
+      if (r.performer?.full_name) performerMap[r.id] = r.performer.full_name
+    })
+  }
+
   const processed = (items ?? []).map((item: any) => {
     const assignments: any[] = Array.isArray(item.assignments) ? item.assignments : []
-    const current = assignments.find((a: any) => a.status === 'active' || a.status === 'planned') ?? null
-    const history = assignments
+    const withPerformer = assignments.map((a: any) => ({
+      ...a,
+      performer: performerMap[a.id] ? { full_name: performerMap[a.id] } : null,
+    }))
+    const current = withPerformer.find((a: any) => a.status === 'active' || a.status === 'planned') ?? null
+    const history = withPerformer
       .filter((a: any) => a.status !== 'active' && a.status !== 'planned')
       .sort((a: any, b: any) => (b.returned_at ?? b.signed_at ?? '').localeCompare(a.returned_at ?? a.signed_at ?? ''))
     return { ...item, assignment: current, history }
