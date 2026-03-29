@@ -11,7 +11,7 @@ interface HistoryEntry {
   returned_at: string | null
   notes: string | null
   soldier: { full_name: string; rank: string } | null
-  performer: { full_name: string } | null
+  performer?: { full_name: string } | null
 }
 
 interface Item {

@@ -14,8 +14,7 @@ export default async function SerialLookupPage() {
       type:equipment_types(id, name, category),
       assignments:equipment_assignments(
         id, status, attribute, signed_at, returned_at, notes,
-        soldier:soldiers(full_name, rank),
-        performer:app_users(full_name)
+        soldier:soldiers(full_name, rank)
       )
     `)
     .order('serial_number')
