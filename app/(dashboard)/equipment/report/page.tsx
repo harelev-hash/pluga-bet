@@ -27,6 +27,26 @@ export default async function EquipmentReportPage() {
       .order('signed_at', { ascending: false }),
   ])
 
+  // Fetch performer names separately (avoids RLS join issues)
+  let performerMap: Record<number, string> = {}
+  const { data: assignmentPerformers } = await supabase
+    .from('equipment_assignments')
+    .select('id, performed_by')
+  const userIds = [...new Set((assignmentPerformers ?? []).map((a: any) => a.performed_by).filter(Boolean))]
+  if (userIds.length > 0) {
+    const { data: users } = await supabase.from('app_users').select('id, full_name').in('id', userIds)
+    const userNameMap: Record<string, string> = {}
+    ;(users ?? []).forEach((u: any) => { userNameMap[u.id] = u.full_name })
+    ;(assignmentPerformers ?? []).forEach((a: any) => {
+      if (a.performed_by && userNameMap[a.performed_by]) performerMap[a.id] = userNameMap[a.performed_by]
+    })
+  }
+
+  const assignmentsWithPerformer = (assignments ?? []).map((a: any) => ({
+    ...a,
+    performer_name: performerMap[a.id] ?? null,
+  }))
+
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3">
@@ -42,7 +62,7 @@ export default async function EquipmentReportPage() {
       <EquipmentReport
         soldiers={soldiers ?? []}
         departments={departments ?? []}
-        assignments={(assignments ?? []) as any}
+        assignments={assignmentsWithPerformer as any}
       />
     </div>
   )

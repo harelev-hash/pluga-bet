@@ -15,6 +15,7 @@ interface Assignment {
   signed_at: string | null
   returned_at: string | null
   notes: string | null
+  performer_name: string | null
   soldier: { id: number; full_name: string; rank: string } | null
   item: { id: number; serial_number: string | null; type: { id: number; name: string; category: string } | null } | null
   type: { id: number; name: string; category: string } | null
@@ -241,7 +242,10 @@ export default function EquipmentReport({ soldiers, departments, assignments }: 
                               <td className="px-4 py-2 text-xs text-slate-400">
                                 {a.returned_at ? `הוחזר ${formatDate(a.returned_at)}` : formatDate(a.signed_at)}
                               </td>
-                              {a.notes && <td className="px-4 py-2 text-xs text-slate-400">{a.notes}</td>}
+                              <td className="px-4 py-2 text-xs text-slate-300">
+                                {a.performer_name ?? ''}
+                                {a.notes && <span className="text-slate-400 mr-1">{a.notes}</span>}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
