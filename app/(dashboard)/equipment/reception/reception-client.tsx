@@ -67,7 +67,6 @@ export default function ReceptionClient({ soldierGroups, activeSoldierIds, curre
         setExpanded(null)
       }
       setConfirming(null)
-      router.refresh()
     })
   }
 
