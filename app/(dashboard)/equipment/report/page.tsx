@@ -6,7 +6,7 @@ import EquipmentReport from './equipment-report'
 export default async function EquipmentReportPage() {
   const supabase = await createClient()
 
-  const [{ data: soldiers }, { data: departments }, { data: assignments }] = await Promise.all([
+  const [{ data: soldiers }, { data: departments }, { data: assignments }, { data: storageLocations }] = await Promise.all([
     supabase
       .from('soldiers')
       .select('id, full_name, rank, role_in_unit, department_id')
@@ -20,11 +20,15 @@ export default async function EquipmentReportPage() {
       .from('equipment_assignments')
       .select(`
         id, status, attribute, ownership, quantity, condition_in, signed_at, returned_at, notes,
-        soldier:soldiers(id, full_name, rank),
+        storage_location_id, storage_soldier_id,
+        storage_location:storage_locations(id, name),
+        storage_soldier:soldiers!storage_soldier_id(id, full_name),
+        soldier:soldiers!soldier_id(id, full_name, rank),
         item:equipment_items(id, serial_number, type:equipment_types(id, name, category)),
         type:equipment_types(id, name, category)
       `)
       .order('signed_at', { ascending: false }),
+    supabase.from('storage_locations').select('id, name').eq('is_active', true).order('sort_order'),
   ])
 
   // Fetch performer names separately (avoids RLS join issues)
@@ -63,6 +67,7 @@ export default async function EquipmentReportPage() {
         soldiers={soldiers ?? []}
         departments={departments ?? []}
         assignments={assignmentsWithPerformer as any}
+        storageLocations={storageLocations ?? []}
       />
     </div>
   )

@@ -6,7 +6,7 @@ import GreenEyesClient from './green-eyes-client'
 export default async function GreenEyesPage() {
   const supabase = await createClient()
 
-  const [{ data: departments }, { data: templates }, { data: soldiers }, { data: assignments }] = await Promise.all([
+  const [{ data: departments }, { data: templates }, { data: soldiers }, { data: assignments }, { data: storageLocations }] = await Promise.all([
     supabase.from('departments').select('id, name, display_order').order('display_order'),
     supabase
       .from('equipment_templates')
@@ -22,12 +22,16 @@ export default async function GreenEyesPage() {
       .from('equipment_assignments')
       .select(`
         id, status, attribute, quantity,
-        soldier:soldiers(id),
+        storage_location_id, storage_soldier_id,
+        storage_location:storage_locations(id, name),
+        storage_soldier:soldiers!storage_soldier_id(id, full_name),
+        soldier:soldiers!soldier_id(id),
         item:equipment_items(id, serial_number, type:equipment_types(id, name, category)),
         type:equipment_types(id, name, category)
       `)
-      .in('status', ['active', 'planned'])
+      .eq('status', 'active')
       .order('id'),
+    supabase.from('storage_locations').select('id, name').eq('is_active', true).order('sort_order'),
   ])
 
   return (
@@ -54,6 +58,7 @@ export default async function GreenEyesPage() {
         templates={(templates ?? []) as any}
         soldiers={soldiers ?? []}
         assignments={(assignments ?? []) as any}
+        storageLocations={storageLocations ?? []}
       />
     </div>
   )

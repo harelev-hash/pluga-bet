@@ -2,17 +2,27 @@
 
 import { useState, useMemo, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { Check, Printer, MessageCircle, Save, X, ChevronLeft } from 'lucide-react'
+import { Check, Printer, MessageCircle, Save, X, ChevronLeft, MapPin } from 'lucide-react'
 
 interface Soldier { id: number; full_name: string; rank: string; role_in_unit: string | null; department_id: number | null }
 interface Department { id: number; name: string; display_order: number }
 interface Template { id: number; name: string; items: { type_id: number }[] }
+interface StorageLocation { id: number; name: string }
 interface Assignment {
   id: number; status: string; attribute: string | null; quantity: number
+  storage_location_id: number | null; storage_soldier_id: number | null
+  storage_location: { id: number; name: string } | null
+  storage_soldier: { id: number; full_name: string } | null
   soldier: { id: number } | null
   item: { id: number; serial_number: string | null; type: { id: number; name: string; category: string } | null } | null
   type: { id: number; name: string; category: string } | null
+}
+
+interface StorageState {
+  locationId: number | null
+  soldierId: number | null
+  locationName: string | null
+  soldierName: string | null
 }
 
 interface Props {
@@ -20,6 +30,7 @@ interface Props {
   departments: Department[]
   templates: Template[]
   assignments: Assignment[]
+  storageLocations: StorageLocation[]
 }
 
 const itemLabel = (a: Assignment) => {
@@ -30,17 +41,34 @@ const itemLabel = (a: Assignment) => {
   return `${name}${serial}${attr}${qty}`
 }
 
-export default function GreenEyesClient({ soldiers, departments, templates, assignments }: Props) {
+export default function GreenEyesClient({ soldiers, departments, templates, assignments, storageLocations }: Props) {
   const [isPending, startTransition] = useTransition()
 
   const [step, setStep] = useState<'setup' | 'check'>('setup')
   const [departmentId, setDepartmentId] = useState<number | null>(null)
   const [templateId, setTemplateId] = useState<number | null>(null)
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set())
-  // assignmentId → true (present) | false (missing) | undefined (unchecked)
   const [checks, setChecks] = useState<Map<number, boolean>>(new Map())
   const [saved, setSaved] = useState(false)
   const [reportDate, setReportDate] = useState(() => new Date().toISOString().split('T')[0])
+
+  // Storage location state per assignment
+  const [assignmentStorage, setAssignmentStorage] = useState<Map<number, StorageState>>(() => {
+    const m = new Map<number, StorageState>()
+    assignments.forEach(a => {
+      if (a.storage_location_id || a.storage_soldier_id) {
+        m.set(a.id, {
+          locationId: a.storage_location_id ?? null,
+          soldierId: a.storage_soldier_id ?? null,
+          locationName: a.storage_location?.name ?? null,
+          soldierName: a.storage_soldier?.full_name ?? null,
+        })
+      }
+    })
+    return m
+  })
+  const [storageEditId, setStorageEditId] = useState<number | null>(null)
+  const [storageSearch, setStorageSearch] = useState('')
 
   const displayDate = new Date(reportDate + 'T12:00:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
@@ -77,6 +105,7 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
     setChecks(init)
     setStep('check')
     setSaved(false)
+    setStorageEditId(null)
   }
 
   const toggle = (id: number) =>
@@ -107,6 +136,26 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
       )
       if (rows.length) await supabase.from('green_eyes_checks').insert(rows)
       setSaved(true)
+    })
+  }
+
+  const updateStorage = (assignmentId: number, locationId: number | null, soldierId: number | null, locationName: string | null, soldierName: string | null) => {
+    startTransition(async () => {
+      const supabase = createClient()
+      await supabase.from('equipment_assignments')
+        .update({ storage_location_id: locationId, storage_soldier_id: soldierId })
+        .eq('id', assignmentId)
+      setAssignmentStorage(prev => {
+        const n = new Map(prev)
+        if (locationId || soldierId) {
+          n.set(assignmentId, { locationId, soldierId, locationName, soldierName })
+        } else {
+          n.delete(assignmentId)
+        }
+        return n
+      })
+      setStorageEditId(null)
+      setStorageSearch('')
     })
   }
 
@@ -247,7 +296,6 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Progress */}
               <div className={`text-sm font-bold px-3 py-1.5 rounded-lg tabular-nums ${
                 checkedItems === totalItems && totalItems > 0 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
               }`}>
@@ -282,7 +330,6 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
             </div>
           </div>
 
-          {/* Progress bar */}
           <div className="mt-2.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 transition-all duration-300 rounded-full"
@@ -333,29 +380,114 @@ export default function GreenEyesClient({ soldiers, departments, templates, assi
 
               {/* Equipment items */}
               {sA.length === 0 ? (
-                <p className="px-4 py-3 text-xs text-slate-400 border-t border-slate-100">אין ציוד רשום</p>
+                <p className="px-4 py-3 text-xs text-slate-400 border-t border-slate-100">אין ציוד חתום</p>
               ) : (
                 <div className="border-t border-slate-100 divide-y divide-slate-50">
                   {sA.map(a => {
                     const checked = checks.get(a.id) === true
+                    const storage = assignmentStorage.get(a.id)
+                    const storageName = storage?.locationName ?? storage?.soldierName ?? null
+                    const isEditingStorage = storageEditId === a.id
+
+                    // Soldiers available as storage targets (excluding the current soldier)
+                    const otherSoldiers = soldiers.filter(s => s.id !== soldier.id)
+                    const searchLower = storageSearch.toLowerCase()
+                    const filteredLocations = storageLocations.filter(l => !storageSearch || l.name.toLowerCase().includes(searchLower))
+                    const filteredSoldiers = otherSoldiers.filter(s => !storageSearch || s.full_name.toLowerCase().includes(searchLower))
+
                     return (
-                      <button
-                        key={a.id}
-                        onClick={() => toggle(a.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-right transition-colors ${checked ? 'bg-green-50/60' : 'hover:bg-slate-50'}`}
-                      >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          checked ? 'bg-green-500 border-green-500' : 'border-slate-300'
-                        }`}>
-                          {checked && <Check className="w-3 h-3 text-white" />}
+                      <div key={a.id}>
+                        {/* Item row */}
+                        <div className={`flex items-center gap-2 px-4 py-2.5 text-sm transition-colors ${checked ? 'bg-green-50/60' : 'hover:bg-slate-50'}`}>
+                          {/* Toggle area */}
+                          <button
+                            onClick={() => toggle(a.id)}
+                            className="flex items-center gap-3 flex-1 text-right min-w-0"
+                          >
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                              checked ? 'bg-green-500 border-green-500' : 'border-slate-300'
+                            }`}>
+                              {checked && <Check className="w-3 h-3 text-white" />}
+                            </div>
+                            <span className={`flex-1 min-w-0 text-right ${checked ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                              {itemLabel(a)}
+                            </span>
+                          </button>
+
+                          {/* Storage location indicator + edit button */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {storageName && (
+                              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full max-w-28 truncate">
+                                {storageName}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => {
+                                setStorageEditId(isEditingStorage ? null : a.id)
+                                setStorageSearch('')
+                              }}
+                              className={`p-1 rounded transition-colors ${
+                                isEditingStorage ? 'text-blue-600 bg-blue-100' : 'text-slate-300 hover:text-blue-400 hover:bg-blue-50'
+                              }`}
+                              title="שנה מקום אפסון"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                        <span className={`flex-1 ${checked ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
-                          {itemLabel(a)}
-                        </span>
-                        {a.status === 'planned' && (
-                          <span className="text-xs text-amber-500 shrink-0">מיועד</span>
+
+                        {/* Inline storage editor */}
+                        {isEditingStorage && (
+                          <div className="px-4 pb-3 pt-1 bg-blue-50/50 border-b border-blue-100">
+                            <p className="text-xs font-semibold text-slate-500 mb-2">מקום אפסון</p>
+                            <input
+                              type="text"
+                              value={storageSearch}
+                              onChange={e => setStorageSearch(e.target.value)}
+                              placeholder="חפש מיקום או חייל..."
+                              autoFocus
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs mb-2 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                            />
+                            <div className="flex flex-wrap gap-1.5">
+                              {/* Clear option */}
+                              <button
+                                onClick={() => updateStorage(a.id, null, null, null, null)}
+                                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                  !storage ? 'bg-slate-600 text-white border-slate-600' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                                }`}
+                              >
+                                אצל החייל
+                              </button>
+
+                              {/* Named locations */}
+                              {filteredLocations.map(loc => (
+                                <button
+                                  key={loc.id}
+                                  onClick={() => updateStorage(a.id, loc.id, null, loc.name, null)}
+                                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                    storage?.locationId === loc.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400 hover:text-blue-600'
+                                  }`}
+                                >
+                                  {loc.name}
+                                </button>
+                              ))}
+
+                              {/* Soldiers */}
+                              {filteredSoldiers.map(s => (
+                                <button
+                                  key={s.id}
+                                  onClick={() => updateStorage(a.id, null, s.id, null, s.full_name)}
+                                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                    storage?.soldierId === s.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'
+                                  }`}
+                                >
+                                  {s.full_name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         )}
-                      </button>
+                      </div>
                     )
                   })}
                 </div>

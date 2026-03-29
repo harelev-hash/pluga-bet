@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown, ChevronUp, X, Plus, Users } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { ChevronDown, ChevronUp, X, Plus, Users, MapPin } from 'lucide-react'
 
 interface Soldier { id: number; full_name: string; rank: string; role_in_unit: string | null; department_id: number | null }
 interface Department { id: number; name: string; display_order: number }
+interface StorageLocation { id: number; name: string }
 interface Assignment {
   id: number
   status: string
@@ -16,15 +18,27 @@ interface Assignment {
   returned_at: string | null
   notes: string | null
   performer_name: string | null
+  storage_location_id: number | null
+  storage_soldier_id: number | null
+  storage_location: { id: number; name: string } | null
+  storage_soldier: { id: number; full_name: string } | null
   soldier: { id: number; full_name: string; rank: string } | null
   item: { id: number; serial_number: string | null; type: { id: number; name: string; category: string } | null } | null
   type: { id: number; name: string; category: string } | null
+}
+
+interface StorageState {
+  locationId: number | null
+  soldierId: number | null
+  locationName: string | null
+  soldierName: string | null
 }
 
 interface Props {
   soldiers: Soldier[]
   departments: Department[]
   assignments: Assignment[]
+  storageLocations: StorageLocation[]
 }
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
@@ -39,10 +53,48 @@ const CONDITION_LABELS: Record<string, string> = {
   serviceable: 'תקין', worn: 'בלאי', damaged: 'פגום',
 }
 
-export default function EquipmentReport({ soldiers, departments, assignments }: Props) {
+export default function EquipmentReport({ soldiers, departments, assignments, storageLocations }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [showHistory, setShowHistory] = useState<Set<number>>(new Set())
+  const [isPending, startTransition] = useTransition()
+  const [storageEditId, setStorageEditId] = useState<number | null>(null)
+  const [storageSearch, setStorageSearch] = useState('')
+
+  const [assignmentStorage, setAssignmentStorage] = useState<Map<number, StorageState>>(() => {
+    const m = new Map<number, StorageState>()
+    assignments.forEach(a => {
+      if (a.storage_location_id || a.storage_soldier_id) {
+        m.set(a.id, {
+          locationId: a.storage_location_id ?? null,
+          soldierId: a.storage_soldier_id ?? null,
+          locationName: a.storage_location?.name ?? null,
+          soldierName: a.storage_soldier?.full_name ?? null,
+        })
+      }
+    })
+    return m
+  })
+
+  const updateStorage = (assignmentId: number, locationId: number | null, soldierId: number | null, locationName: string | null, soldierName: string | null) => {
+    startTransition(async () => {
+      const supabase = createClient()
+      await supabase.from('equipment_assignments')
+        .update({ storage_location_id: locationId, storage_soldier_id: soldierId })
+        .eq('id', assignmentId)
+      setAssignmentStorage(prev => {
+        const n = new Map(prev)
+        if (locationId || soldierId) {
+          n.set(assignmentId, { locationId, soldierId, locationName, soldierName })
+        } else {
+          n.delete(assignmentId)
+        }
+        return n
+      })
+      setStorageEditId(null)
+      setStorageSearch('')
+    })
+  }
 
   const addSoldier = (id: number) => setSelectedIds(prev => new Set([...prev, id]))
   const removeSoldier = (id: number) => setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n })
@@ -189,25 +241,91 @@ export default function EquipmentReport({ soldiers, departments, assignments }: 
                       <div className="px-4 py-1.5 bg-slate-50 text-xs font-semibold text-slate-500">{cat}</div>
                       <table className="w-full text-sm">
                         <tbody className="divide-y divide-slate-50">
-                          {items.map(a => (
-                            <tr key={a.id} className="hover:bg-slate-50/50">
-                              <td className="px-4 py-2.5 font-medium text-slate-800">
-                                {itemName(a)}
-                                {itemSerial(a) && <span className="text-slate-400 font-mono text-xs mr-2">#{itemSerial(a)}</span>}
-                              </td>
-                              <td className="px-4 py-2.5 text-slate-500 text-xs">{a.attribute ?? ''}</td>
-                              <td className="px-4 py-2.5 text-xs">
-                                {a.quantity > 1 && <span className="text-slate-500">×{a.quantity}</span>}
-                              </td>
-                              <td className="px-4 py-2.5 text-xs text-slate-400">{CONDITION_LABELS[a.condition_in] ?? a.condition_in}</td>
-                              <td className="px-4 py-2.5">
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_LABELS[a.status]?.cls}`}>
-                                  {STATUS_LABELS[a.status]?.label}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2.5 text-xs text-slate-400">{formatDate(a.signed_at)}</td>
-                            </tr>
-                          ))}
+                          {items.map(a => {
+                            const storage = assignmentStorage.get(a.id)
+                            const storageName = storage?.locationName ?? storage?.soldierName ?? null
+                            const isEditingStorage = storageEditId === a.id
+                            const searchLower = storageSearch.toLowerCase()
+                            const filteredLocations = storageLocations.filter(l => !storageSearch || l.name.toLowerCase().includes(searchLower))
+                            const filteredSoldiers = soldiers.filter(s => s.id !== a.soldier?.id && (!storageSearch || s.full_name.toLowerCase().includes(searchLower)))
+                            return (
+                              <tr key={a.id} className="hover:bg-slate-50/50">
+                                <td className="px-4 py-2.5 font-medium text-slate-800">
+                                  {itemName(a)}
+                                  {itemSerial(a) && <span className="text-slate-400 font-mono text-xs mr-2">#{itemSerial(a)}</span>}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-500 text-xs">{a.attribute ?? ''}</td>
+                                <td className="px-4 py-2.5 text-xs">
+                                  {a.quantity > 1 && <span className="text-slate-500">×{a.quantity}</span>}
+                                </td>
+                                <td className="px-4 py-2.5 text-xs text-slate-400">{CONDITION_LABELS[a.condition_in] ?? a.condition_in}</td>
+                                <td className="px-4 py-2.5">
+                                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_LABELS[a.status]?.cls}`}>
+                                    {STATUS_LABELS[a.status]?.label}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 text-xs text-slate-400">{formatDate(a.signed_at)}</td>
+                                {/* Storage location cell — only for active assignments */}
+                                {a.status === 'active' && (
+                                  <td className="px-2 py-2.5">
+                                    <div className="flex items-center gap-1">
+                                      {storageName && (
+                                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full max-w-24 truncate">
+                                          {storageName}
+                                        </span>
+                                      )}
+                                      <button
+                                        onClick={() => { setStorageEditId(isEditingStorage ? null : a.id); setStorageSearch('') }}
+                                        className={`p-1 rounded transition-colors ${isEditingStorage ? 'text-blue-600 bg-blue-100' : 'text-slate-300 hover:text-blue-400 hover:bg-blue-50'}`}
+                                        title="שנה מקום אפסון"
+                                      >
+                                        <MapPin className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                    {isEditingStorage && (
+                                      <div className="mt-1 p-2 bg-blue-50 rounded-lg border border-blue-100 min-w-48 z-10">
+                                        <input
+                                          type="text"
+                                          value={storageSearch}
+                                          onChange={e => setStorageSearch(e.target.value)}
+                                          placeholder="חפש..."
+                                          autoFocus
+                                          className="w-full border border-slate-200 rounded px-2 py-1 text-xs mb-1.5 focus:outline-none focus:ring-1 focus:ring-blue-300 bg-white"
+                                        />
+                                        <div className="flex flex-wrap gap-1">
+                                          <button
+                                            onClick={() => updateStorage(a.id, null, null, null, null)}
+                                            className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${!storage ? 'bg-slate-600 text-white border-slate-600' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
+                                          >
+                                            אצל החייל
+                                          </button>
+                                          {filteredLocations.map(loc => (
+                                            <button
+                                              key={loc.id}
+                                              onClick={() => updateStorage(a.id, loc.id, null, loc.name, null)}
+                                              className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${storage?.locationId === loc.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400 hover:text-blue-600'}`}
+                                            >
+                                              {loc.name}
+                                            </button>
+                                          ))}
+                                          {filteredSoldiers.map(s => (
+                                            <button
+                                              key={s.id}
+                                              onClick={() => updateStorage(a.id, null, s.id, null, s.full_name)}
+                                              className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${storage?.soldierId === s.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'}`}
+                                            >
+                                              {s.full_name}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </td>
+                                )}
+                                {a.status !== 'active' && <td />}
+                              </tr>
+                            )
+                          })}
                         </tbody>
                       </table>
                     </div>

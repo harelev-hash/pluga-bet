@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import TypesAdmin from './types-admin'
 import TemplatesAdmin from './templates-admin'
+import StorageLocationsAdmin from './storage-locations-admin'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
@@ -12,17 +13,19 @@ export default async function EquipmentAdminPage({
   const { tab = 'types' } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: types }, { data: templates }] = await Promise.all([
+  const [{ data: types }, { data: templates }, { data: storageLocations }] = await Promise.all([
     supabase.from('equipment_types').select('*').order('category').order('name'),
     supabase
       .from('equipment_templates')
       .select('*, items:equipment_template_items(*, type:equipment_types(*))')
       .order('name'),
+    supabase.from('storage_locations').select('*').order('sort_order'),
   ])
 
   const tabs = [
     { key: 'types',     label: 'סוגי ציוד' },
     { key: 'templates', label: 'תבניות אפיון' },
+    { key: 'locations', label: 'מקומות אפסון' },
   ]
 
   return (
@@ -56,6 +59,7 @@ export default async function EquipmentAdminPage({
 
       {tab === 'types' && <TypesAdmin types={types ?? []} />}
       {tab === 'templates' && <TemplatesAdmin templates={templates ?? []} types={types ?? []} />}
+      {tab === 'locations' && <StorageLocationsAdmin locations={storageLocations ?? []} />}
     </div>
   )
 }
