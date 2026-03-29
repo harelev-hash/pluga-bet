@@ -17,11 +17,30 @@ interface Assignment {
   type: { id: number; name: string } | null
 }
 
+interface InitialItem {
+  item_kind: string | null
+  soldier_id: number | null
+  assignment_id: number | null
+  type_id: number | null
+  free_text: string | null
+  quantity_requested: number
+  notes: string | null
+}
+
+interface InitialData {
+  id: number
+  title: string | null
+  department_id: number | null
+  request_date: string | null
+  items: InitialItem[]
+}
+
 interface Props {
   departments: Department[]
   soldiers: Soldier[]
   equipTypes: EquipType[]
   assignments: Assignment[]
+  initialData?: InitialData
 }
 
 type ItemKind = 'wear' | 'missing_soldier' | 'missing_dept' | 'free_text'
@@ -70,16 +89,36 @@ const CONDITION_LABEL: Record<string, string> = {
   serviceable: 'תקין', worn: 'בלאי', damaged: 'פגום',
 }
 
-export default function RequestForm({ departments, soldiers, equipTypes, assignments }: Props) {
+function dbItemToCartItem(i: InitialItem): CartItem {
+  const kind = (i.item_kind === 'equipment' ? 'missing_dept' : i.item_kind ?? 'missing_dept') as ItemKind
+  return {
+    localId: Math.random().toString(36).slice(2),
+    kind,
+    soldier_id: i.soldier_id?.toString() ?? '',
+    assignment_id: i.assignment_id?.toString() ?? '',
+    type_id: i.type_id?.toString() ?? '',
+    type_free_text: !i.type_id && kind !== 'free_text' ? (i.free_text ?? '') : '',
+    free_text: kind === 'free_text' ? (i.free_text ?? '') : '',
+    quantity: i.quantity_requested?.toString() ?? '1',
+    notes: i.notes ?? '',
+  }
+}
+
+export default function RequestForm({ departments, soldiers, equipTypes, assignments, initialData }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const isEdit = !!initialData
 
   const today = new Date().toISOString().split('T')[0]
-  const [deptId, setDeptId] = useState('')
-  const [title, setTitle] = useState('')
-  const [requestDate, setRequestDate] = useState(today)
-  const [items, setItems] = useState<CartItem[]>([newItem('missing_dept')])
+  const [deptId, setDeptId] = useState(initialData?.department_id?.toString() ?? '')
+  const [title, setTitle] = useState(initialData?.title ?? '')
+  const [requestDate, setRequestDate] = useState(initialData?.request_date ?? today)
+  const [items, setItems] = useState<CartItem[]>(
+    initialData?.items.length
+      ? initialData.items.map(dbItemToCartItem)
+      : [newItem('missing_dept')]
+  )
 
   const deptSoldiers = soldiers.filter(s => s.department_id === parseInt(deptId))
 
@@ -105,29 +144,33 @@ export default function RequestForm({ departments, soldiers, equipTypes, assignm
     const { data: { user } } = await supabase.auth.getUser()
 
     startTransition(async () => {
-      const { data: req, error: reqErr } = await supabase
-        .from('melm_requests')
-        .insert({
-          title: title || null,
-          department_id: parseInt(deptId),
-          request_date: requestDate,
-          status: 'open',
-          submitted_by: user?.id ?? null,
-        })
-        .select()
-        .single()
+      let requestId: number
 
-      if (reqErr) { setError(reqErr.message); return }
+      if (isEdit) {
+        const { error: updErr } = await supabase
+          .from('melm_requests')
+          .update({ title: title || null, department_id: parseInt(deptId), request_date: requestDate })
+          .eq('id', initialData!.id)
+        if (updErr) { setError(updErr.message); return }
+        requestId = initialData!.id
+        await supabase.from('melm_items').delete().eq('request_id', requestId)
+      } else {
+        const { data: req, error: reqErr } = await supabase
+          .from('melm_requests')
+          .insert({ title: title || null, department_id: parseInt(deptId), request_date: requestDate, status: 'open', submitted_by: user?.id ?? null })
+          .select()
+          .single()
+        if (reqErr) { setError(reqErr.message); return }
+        requestId = req.id
+      }
 
       const itemPayloads = items.map(it => ({
-        request_id: req.id,
+        request_id: requestId,
         item_kind: it.kind,
         soldier_id: it.soldier_id ? parseInt(it.soldier_id) : null,
         assignment_id: it.assignment_id ? parseInt(it.assignment_id) : null,
         type_id: it.type_id ? parseInt(it.type_id) : null,
-        free_text: it.kind === 'free_text'
-          ? it.free_text || null
-          : it.type_free_text || null,
+        free_text: it.kind === 'free_text' ? it.free_text || null : it.type_free_text || null,
         quantity_requested: parseInt(it.quantity) || 1,
         notes: it.notes || null,
         resap_status: 'pending',
@@ -136,7 +179,7 @@ export default function RequestForm({ departments, soldiers, equipTypes, assignm
       const { error: itemsErr } = await supabase.from('melm_items').insert(itemPayloads)
       if (itemsErr) { setError(itemsErr.message); return }
 
-      router.push('/melm')
+      router.push(isEdit ? `/melm/${requestId}` : '/melm')
     })
   }
 
@@ -222,7 +265,7 @@ export default function RequestForm({ departments, soldiers, equipTypes, assignm
           className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
         >
           <Save className="w-4 h-4" />
-          {isPending ? 'שולח...' : 'שלח בקשה'}
+          {isPending ? 'שומר...' : isEdit ? 'שמור שינויים' : 'שלח בקשה'}
         </button>
         <button
           type="button"
