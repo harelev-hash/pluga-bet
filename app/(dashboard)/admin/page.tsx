@@ -6,6 +6,7 @@ import AdminPermissions from './admin-permissions'
 import Link from 'next/link'
 import { ROLE_LABELS } from '@/lib/utils'
 import type { UserRole } from '@/lib/types/database'
+// ROLE_LABELS used only as fallback for roles not yet in DB
 
 export default async function AdminPage({
   searchParams,
@@ -25,7 +26,7 @@ export default async function AdminPage({
   const [{ data: users }, { data: periods }, { data: rolePermissions }] = await Promise.all([
     supabase.from('app_users').select('*').order('created_at', { ascending: false }),
     supabase.from('reserve_periods').select('*').order('start_date', { ascending: false }),
-    supabase.from('role_permissions').select('role, permissions').order('role'),
+    supabase.from('role_permissions').select('role, label, permissions').order('role'),
   ])
 
   const tabs = [
@@ -34,17 +35,11 @@ export default async function AdminPage({
     { key: 'permissions', label: 'הרשאות' },
   ]
 
-  // Build rolePermsMap: role → permissions[]
-  const rolePermsMap: Record<string, string[]> = {}
-  for (const rp of rolePermissions ?? []) {
-    rolePermsMap[rp.role] = rp.permissions
-  }
-
-  // Roles list for permissions editor
-  const roles = Object.entries(ROLE_LABELS).map(([key, label]) => ({
-    key: key as UserRole,
-    label,
-    permissions: rolePermsMap[key] ?? [],
+  // Build roles list directly from DB (label comes from DB, not hardcoded)
+  const roles = (rolePermissions ?? []).map(rp => ({
+    key: rp.role,
+    label: rp.label || ROLE_LABELS[rp.role as UserRole] || rp.role,
+    permissions: rp.permissions ?? [],
   }))
 
   return (
