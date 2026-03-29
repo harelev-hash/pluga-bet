@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import TrackingList from './tracking-list'
 
 export default async function TrackingPage() {
+  await requirePermission('nav:tracking')
   const supabase = await createClient()
 
   const [{ data: events }, { data: currentPeriod }, { data: soldiers }] = await Promise.all([

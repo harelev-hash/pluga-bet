@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import ReceptionClient from './reception-client'
 
 export default async function ReceptionPage() {
+  await requirePermission('equipment:reception')
   const supabase = await createClient()
 
   // Get all soldiers with planned assignments

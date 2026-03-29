@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import { todayISO, formatDate } from '@/lib/utils'
 import OpsGrid from './ops-grid'
 
@@ -7,6 +8,7 @@ export default async function OpsPage({
 }: {
   searchParams: Promise<{ date?: string }>
 }) {
+  await requirePermission('nav:ops')
   const { date: dateParam } = await searchParams
   const date = dateParam ?? todayISO()
   const supabase = await createClient()

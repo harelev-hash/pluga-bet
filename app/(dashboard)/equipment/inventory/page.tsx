@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import InventoryTable from './inventory-table'
 
 export default async function InventoryPage() {
+  await requirePermission('equipment:inventory')
   const supabase = await createClient()
 
   const [{ data: types }, { data: items }, { data: assignments }] = await Promise.all([

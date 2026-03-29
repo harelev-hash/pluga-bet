@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, Edit } from 'lucide-react'
@@ -11,6 +12,7 @@ interface Props {
 
 export default async function SoldierPage({ params }: Props) {
   const { id } = await params
+  await requirePermission('nav:soldiers')
   const isNew = id === 'new'
   const supabase = await createClient()
 

@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import RequestForm from './request-form'
 
 export default async function MelmRequestPage() {
+  await requirePermission('melm:create')
   const supabase = await createClient()
 
   const [

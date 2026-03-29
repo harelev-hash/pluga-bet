@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
@@ -10,6 +11,7 @@ interface Props {
 
 export default async function TrackingEventPage({ params }: Props) {
   const { id } = await params
+  await requirePermission('nav:tracking')
   const supabase = await createClient()
 
   const [{ data: event, error }, { data: entries }, { data: departments }] = await Promise.all([

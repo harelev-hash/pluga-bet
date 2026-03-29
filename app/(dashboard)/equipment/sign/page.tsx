@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import SignForm from './sign-form'
 
 export default async function SignEquipmentPage() {
+  await requirePermission('equipment:sign')
   const supabase = await createClient()
 
   const [{ data: soldiers }, { data: types }, { data: items }, { data: templates }, { data: period }] = await Promise.all([

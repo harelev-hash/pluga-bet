@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import EquipmentReport from './equipment-report'
 
 export default async function EquipmentReportPage() {
+  await requirePermission('equipment:report')
   const supabase = await createClient()
 
   const [{ data: soldiers }, { data: departments }, { data: assignments }, { data: storageLocations }] = await Promise.all([

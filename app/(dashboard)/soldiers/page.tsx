@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { UserPlus, Upload, Search } from 'lucide-react'
 import SoldiersTable from './soldiers-table'
@@ -8,6 +9,7 @@ export default async function SoldiersPage({
 }: {
   searchParams: Promise<{ q?: string; dept?: string; active?: string }>
 }) {
+  await requirePermission('nav:soldiers')
   const { q, dept, active } = await searchParams
   const supabase = await createClient()
 

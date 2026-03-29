@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { Package, PenLine, LayoutList, Settings, FileSpreadsheet, UserCheck, BarChart2, ScanSearch, Eye } from 'lucide-react'
 
@@ -13,6 +14,7 @@ function ConditionBadge({ condition }: { condition: string }) {
 }
 
 export default async function EquipmentPage() {
+  await requirePermission('nav:equipment')
   const supabase = await createClient()
 
   const [{ data: assignments }, { data: types }] = await Promise.all([

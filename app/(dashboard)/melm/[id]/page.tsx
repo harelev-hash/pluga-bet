@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
@@ -9,6 +10,7 @@ interface Props { params: Promise<{ id: string }> }
 
 export default async function MelmHandlePage({ params }: Props) {
   const { id } = await params
+  await requirePermission('melm:view')
   const supabase = await createClient()
 
   const { data: request, error } = await supabase

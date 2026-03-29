@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import SerialLookupClient from './serial-lookup-client'
 
 export default async function SerialLookupPage() {
+  await requirePermission('nav:equipment')
   const supabase = await createClient()
 
   // Fetch all serialized items with ALL assignments (current + history)

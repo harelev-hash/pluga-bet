@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import GreenEyesHistory from './history-client'
 
 export default async function GreenEyesHistoryPage() {
+  await requirePermission('equipment:green_eyes')
   const supabase = await createClient()
 
   const [{ data: reports, error: reportsError }, { data: departments }] = await Promise.all([

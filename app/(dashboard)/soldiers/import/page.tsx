@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import SoldiersImport from './soldiers-import'
 
 export default async function ImportPage() {
+  await requirePermission('soldiers:edit')
   const supabase = await createClient()
   const { data: departments } = await supabase.from('departments').select('*').order('display_order')
 

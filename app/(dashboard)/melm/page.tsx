@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ClipboardList, Wrench, BarChart2, ChevronLeft } from 'lucide-react'
 import MelmList from './melm-list'
 
 export default async function MelmPage() {
+  await requirePermission('melm:view')
   const supabase = await createClient()
 
   const [{ data: requests }, { data: departments }] = await Promise.all([

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
@@ -15,6 +16,7 @@ const CONDITION_LABELS: Record<string, string> = {
 
 export default async function EquipmentItemPage({ params }: Props) {
   const { id } = await params
+  await requirePermission('equipment:admin')
   const supabase = await createClient()
 
   const [{ data: types }, { data: item, error }] = await Promise.all([

@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import ImportKitsForm from './import-kits-form'
 
 export default async function ImportKitsPage() {
+  await requirePermission('equipment:import')
   const supabase = await createClient()
 
   const [{ data: soldiers }, { data: types }, { data: existingItems }] = await Promise.all([

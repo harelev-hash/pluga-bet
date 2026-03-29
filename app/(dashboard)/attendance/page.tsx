@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import { todayISO, formatDate } from '@/lib/utils'
 import AttendanceGrid from './attendance-grid'
 
@@ -7,6 +8,7 @@ export default async function AttendancePage({
 }: {
   searchParams: Promise<{ date?: string; dept?: string }>
 }) {
+  await requirePermission('nav:attendance')
   const { date: dateParam, dept } = await searchParams
   const date = dateParam ?? todayISO()
   const supabase = await createClient()

@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import AnalyticsClient from './analytics-client'
 
 export default async function MelmAnalyticsPage() {
+  await requirePermission('melm:view')
   const supabase = await createClient()
 
   const [{ data: requests }, { data: items }] = await Promise.all([

@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import HandleDashboard from './handle-dashboard'
 
 export default async function MelmHandleDashboardPage() {
+  await requirePermission('melm:resap')
   const supabase = await createClient()
 
   const [{ data: requests }, { data: departments }] = await Promise.all([

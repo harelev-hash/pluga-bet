@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import TypesAdmin from './types-admin'
 import TemplatesAdmin from './templates-admin'
 import StorageLocationsAdmin from './storage-locations-admin'
@@ -10,6 +11,7 @@ export default async function EquipmentAdminPage({
 }: {
   searchParams: Promise<{ tab?: string }>
 }) {
+  await requirePermission('equipment:admin')
   const { tab = 'types' } = await searchParams
   const supabase = await createClient()
 

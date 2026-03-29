@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import NewEquipmentForm from './new-equipment-form'
 
 export default async function NewEquipmentPage() {
+  await requirePermission('equipment:admin')
   const supabase = await createClient()
   const { data: types } = await supabase.from('equipment_types').select('*').order('category').order('name')
 
