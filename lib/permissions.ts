@@ -42,7 +42,8 @@ export const PERMISSION_ITEMS: PermissionItem[] = [
   { key: 'melm:close',  label: 'סגירת בקשת מל"מ',     group: 'מל"מ' },
 
   // Ops
-  { key: 'ops:edit', label: 'עריכת נתונים מבצעיים', group: 'מבצעי' },
+  { key: 'ops:edit',   label: 'עריכת שיבוץ יומי',        group: 'מבצעי' },
+  { key: 'ops:manage', label: 'ניהול הגדרות עמדות',       group: 'מבצעי' },
 
   // Admin
   { key: 'admin:users',       label: 'ניהול משתמשים',   group: 'ניהול' },
@@ -57,7 +58,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
   sys_admin: ['*'],
   hr:        ['nav:soldiers', 'nav:attendance', 'nav:tracking', 'nav:equipment', 'nav:melm', 'soldiers:edit', 'attendance:edit', 'tracking:edit', 'equipment:report', 'equipment:green_eyes', 'melm:view', 'melm:create'],
   rsfp:      ['nav:equipment', 'nav:melm', 'equipment:sign', 'equipment:reception', 'equipment:report', 'equipment:green_eyes', 'equipment:inventory', 'equipment:import', 'equipment:admin', 'equipment:storage_edit', 'melm:view', 'melm:create', 'melm:handle', 'melm:close'],
-  commander: ['nav:equipment', 'nav:tracking', 'nav:ops', 'nav:melm', 'equipment:report', 'equipment:green_eyes', 'equipment:storage_edit', 'tracking:edit', 'ops:edit', 'melm:view', 'melm:create'],
+  commander: ['nav:equipment', 'nav:tracking', 'nav:ops', 'nav:melm', 'equipment:report', 'equipment:green_eyes', 'equipment:storage_edit', 'tracking:edit', 'ops:edit', 'ops:manage', 'melm:view', 'melm:create'],
   viewer:    ['nav:soldiers', 'nav:attendance', 'nav:tracking', 'nav:equipment', 'nav:melm', 'nav:ops', 'equipment:report', 'equipment:green_eyes', 'melm:view'],
 }
 

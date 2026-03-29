@@ -1,57 +1,50 @@
-import { createClient } from '@/lib/supabase/server'
-import { requirePermission } from '@/lib/auth/server'
-import { todayISO, formatDate } from '@/lib/utils'
-import OpsGrid from './ops-grid'
+import { getPermissions } from '@/lib/auth/server'
+import { hasPermission } from '@/lib/permissions'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { CalendarDays, Settings2 } from 'lucide-react'
 
-export default async function OpsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ date?: string }>
-}) {
-  await requirePermission('nav:ops')
-  const { date: dateParam } = await searchParams
-  const date = dateParam ?? todayISO()
-  const supabase = await createClient()
+export default async function OpsPage() {
+  const permissions = await getPermissions()
+  if (!hasPermission(permissions, 'nav:ops')) redirect('/')
 
-  const [{ data: posts }, { data: soldiers }, { data: assignments }] = await Promise.all([
-    supabase.from('guard_posts').select('*').eq('is_active', true).order('name'),
-    supabase
-      .from('soldiers')
-      .select('id, full_name, rank, certifications, department_id, department:departments(id,name)')
-      .eq('is_active', true)
-      .order('full_name'),
-    supabase.from('operational_assignments').select('*').eq('date', date),
-  ])
+  const canEdit   = hasPermission(permissions, 'ops:edit')
+  const canManage = hasPermission(permissions, 'ops:manage')
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">שיבוץ יומי</h1>
-          <p className="text-slate-500 text-sm mt-0.5">{formatDate(date)}</p>
-        </div>
+    <div className="max-w-3xl mx-auto space-y-6" dir="rtl">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-800">מבצעי</h1>
+        <p className="text-slate-500 text-sm mt-0.5">שיבוץ יומי וניהול עמדות</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-        <form className="flex gap-3">
-          <input
-            type="date"
-            name="date"
-            defaultValue={date}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-            טען
-          </button>
-        </form>
-      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Link
+          href="/ops/schedule"
+          className="flex flex-col items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl p-8 shadow-sm transition-colors"
+        >
+          <CalendarDays className="w-10 h-10" />
+          <span className="text-xl font-bold">שיבוץ יומי</span>
+          <span className="text-blue-200 text-sm text-center">תצוגה ועריכת השיבוץ לפי יום</span>
+        </Link>
 
-      <OpsGrid
-        posts={posts ?? []}
-        soldiers={soldiers ?? []}
-        date={date}
-        assignments={assignments ?? []}
-      />
+        {canManage ? (
+          <Link
+            href="/ops/duty-types"
+            className="flex flex-col items-center justify-center gap-3 bg-slate-700 hover:bg-slate-800 text-white rounded-2xl p-8 shadow-sm transition-colors"
+          >
+            <Settings2 className="w-10 h-10" />
+            <span className="text-xl font-bold">ניהול עמדות</span>
+            <span className="text-slate-400 text-sm text-center">הגדרת עמדות, משמרות וכוננויות</span>
+          </Link>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-3 bg-slate-100 text-slate-400 rounded-2xl p-8 cursor-not-allowed">
+            <Settings2 className="w-10 h-10" />
+            <span className="text-xl font-bold">ניהול עמדות</span>
+            <span className="text-slate-300 text-sm text-center">אין הרשאה לניהול הגדרות</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
