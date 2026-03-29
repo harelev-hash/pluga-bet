@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { hasPermission, DEFAULT_ROLE_PERMISSIONS } from '@/lib/permissions'
 
-export async function requirePermission(key: string): Promise<void> {
+export async function getPermissions(): Promise<string[]> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -21,7 +21,10 @@ export async function requirePermission(key: string): Promise<void> {
     .eq('role', appUser.role)
     .single()
 
-  const permissions: string[] = rolePerms?.permissions ?? DEFAULT_ROLE_PERMISSIONS[appUser.role as string] ?? []
+  return rolePerms?.permissions ?? DEFAULT_ROLE_PERMISSIONS[appUser.role as string] ?? []
+}
 
+export async function requirePermission(key: string): Promise<void> {
+  const permissions = await getPermissions()
   if (!hasPermission(permissions, key)) redirect('/')
 }

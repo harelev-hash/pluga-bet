@@ -1,11 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
-import { requirePermission } from '@/lib/auth/server'
+import { getPermissions } from '@/lib/auth/server'
+import { hasPermission } from '@/lib/permissions'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ClipboardList, Wrench, BarChart2, ChevronLeft } from 'lucide-react'
 import MelmList from './melm-list'
 
 export default async function MelmPage() {
-  await requirePermission('melm:view')
+  const permissions = await getPermissions()
+  if (!hasPermission(permissions, 'melm:view')) redirect('/')
+  const canHandle = hasPermission(permissions, 'melm:handle')
   const supabase = await createClient()
 
   const [{ data: requests }, { data: departments }] = await Promise.all([
@@ -56,19 +60,27 @@ export default async function MelmPage() {
           <span className="text-blue-200 text-sm text-center">הגשת בקשה חדשה עבור המחלקה</span>
         </Link>
 
-        <Link
-          href="/melm/handle"
-          className="flex flex-col items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl p-8 shadow-sm transition-colors relative"
-        >
-          <Wrench className="w-10 h-10" />
-          <span className="text-xl font-bold">טיפול במל&quot;מ</span>
-          <span className="text-emerald-200 text-sm text-center">טיפול בבקשות פתוחות</span>
-          {openCount > 0 && (
-            <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-              {openCount}
-            </span>
-          )}
-        </Link>
+        {canHandle ? (
+          <Link
+            href="/melm/handle"
+            className="flex flex-col items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl p-8 shadow-sm transition-colors relative"
+          >
+            <Wrench className="w-10 h-10" />
+            <span className="text-xl font-bold">טיפול במל&quot;מ</span>
+            <span className="text-emerald-200 text-sm text-center">טיפול בבקשות פתוחות</span>
+            {openCount > 0 && (
+              <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                {openCount}
+              </span>
+            )}
+          </Link>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-3 bg-slate-100 text-slate-400 rounded-2xl p-8 cursor-not-allowed">
+            <Wrench className="w-10 h-10" />
+            <span className="text-xl font-bold">טיפול במל&quot;מ</span>
+            <span className="text-slate-300 text-sm text-center">אין הרשאה לטיפול בבקשות</span>
+          </div>
+        )}
       </div>
 
       <MelmList requests={enrichedRequests} departments={departments ?? []} />

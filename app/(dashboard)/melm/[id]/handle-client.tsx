@@ -32,6 +32,8 @@ interface Props {
   items: MelmItem[]
   closedByName: string | null
   closedAt: string | null
+  canHandle: boolean
+  canClose: boolean
 }
 
 type ResapStatus = 'pending' | 'supplied' | 'long_term' | 'rejected'
@@ -58,7 +60,7 @@ const KIND_LABEL: Record<string, string> = {
 const formatDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null
 
-export default function HandleClient({ requestId, initialStatus, items: initialItems, closedByName, closedAt }: Props) {
+export default function HandleClient({ requestId, initialStatus, items: initialItems, closedByName, closedAt, canHandle, canClose }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [requestStatus, setRequestStatus] = useState(initialStatus)
@@ -72,7 +74,8 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
   const [saved, setSaved] = useState(false)
   const [closing, setClosing] = useState(false)
 
-  const isClosed = requestStatus === 'closed'
+  const isClosed   = requestStatus === 'closed'
+  const isReadOnly = isClosed || !canHandle
 
   const updateItem = (id: number, patch: Partial<typeof items[0]>) =>
     setItems(prev => prev.map(it => it.id === id ? { ...it, ...patch } : it))
@@ -232,7 +235,7 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
                       key={s}
                       type="button"
                       title={c.label}
-                      disabled={isClosed}
+                      disabled={isReadOnly}
                       onClick={() => changeStatus(item.id, s)}
                       className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${isActive ? c.activeCls : c.cls}`}
                     >
@@ -244,7 +247,7 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
             </div>
 
             {/* Quick actions */}
-            {kind === 'wear' && item.assignment_id && !isClosed && (
+            {kind === 'wear' && item.assignment_id && !isReadOnly && (
               <div className="flex items-center gap-2">
                 {item.wearDone
                   ? <span className="text-xs text-amber-600 font-medium flex items-center gap-1"><Check className="w-3.5 h-3.5" /> סומן כבלאי בהצלחה</span>
@@ -272,7 +275,7 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
               value={item.resap_notes}
               onChange={e => updateItem(item.id, { resap_notes: e.target.value, localChanged: true })}
               placeholder="הערת רספ (אופציונלי)..."
-              disabled={isClosed}
+              disabled={isReadOnly}
               className="input w-full text-sm text-slate-500 bg-slate-50 disabled:opacity-50"
             />
           </div>
@@ -286,7 +289,7 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
           <select
             value={requestStatus}
             onChange={e => setRequestStatus(e.target.value)}
-            disabled={isClosed}
+            disabled={isReadOnly}
             className="input text-sm max-w-[160px] disabled:opacity-50"
           >
             <option value="open">פתוח</option>
@@ -299,7 +302,7 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
         <div className="flex items-center gap-2">
           {saved && <span className="text-xs text-emerald-600 font-medium">נשמר ✓</span>}
 
-          {!isClosed && (
+          {!isClosed && canHandle && (
             <>
               <button
                 type="button"
@@ -311,15 +314,17 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
                 {isPending && !closing ? 'שומר...' : 'שמור'}
               </button>
 
-              <button
-                type="button"
-                onClick={handleClose}
-                disabled={isPending}
-                className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
-              >
-                <Lock className="w-4 h-4" />
-                {closing ? 'סוגר...' : 'סגור מל"מ'}
-              </button>
+              {canClose && (
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  disabled={isPending}
+                  className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                >
+                  <Lock className="w-4 h-4" />
+                  {closing ? 'סוגר...' : 'סגור מל"מ'}
+                </button>
+              )}
             </>
           )}
         </div>

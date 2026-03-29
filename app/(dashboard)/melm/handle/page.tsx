@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react'
 import HandleDashboard from './handle-dashboard'
 
 export default async function MelmHandleDashboardPage() {
-  await requirePermission('melm:resap')
+  await requirePermission('melm:handle')
   const supabase = await createClient()
 
   const [{ data: requests }, { data: departments }] = await Promise.all([

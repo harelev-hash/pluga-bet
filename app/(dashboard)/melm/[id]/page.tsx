@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { requirePermission } from '@/lib/auth/server'
-import { notFound } from 'next/navigation'
+import { getPermissions } from '@/lib/auth/server'
+import { hasPermission } from '@/lib/permissions'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -10,7 +11,10 @@ interface Props { params: Promise<{ id: string }> }
 
 export default async function MelmHandlePage({ params }: Props) {
   const { id } = await params
-  await requirePermission('melm:view')
+  const permissions = await getPermissions()
+  if (!hasPermission(permissions, 'melm:view')) redirect('/')
+  const canHandle = hasPermission(permissions, 'melm:handle')
+  const canClose  = hasPermission(permissions, 'melm:close')
   const supabase = await createClient()
 
   const { data: request, error } = await supabase
@@ -89,6 +93,8 @@ export default async function MelmHandlePage({ params }: Props) {
         items={itemsWithPerformer}
         closedByName={closedByName}
         closedAt={request.closed_at ?? null}
+        canHandle={canHandle}
+        canClose={canClose}
       />
     </div>
   )
