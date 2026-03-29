@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { hasPermission } from '@/lib/permissions'
 import {
   Shield, Users, CalendarCheck, ClipboardList,
   Package, RefreshCw, Target, Settings, LogOut,
@@ -12,22 +13,23 @@ import {
 import { useState } from 'react'
 
 const NAV_ITEMS = [
-  { href: '/',            label: 'לוח בקרה',     icon: Shield },
-  { href: '/soldiers',   label: 'כוח אדם',      icon: Users },
-  { href: '/attendance', label: 'נוכחות',        icon: CalendarCheck },
-  { href: '/tracking',   label: 'מעקבים',        icon: ClipboardList },
-  { href: '/equipment',  label: 'ציוד',          icon: Package },
-  { href: '/melm',       label: 'מל"מ',          icon: RefreshCw },
-  { href: '/ops',        label: 'מבצעי',         icon: Target },
-  { href: '/admin',      label: 'ניהול',         icon: Settings },
-]
+  { href: '/',            label: 'לוח בקרה',  icon: Shield,         permKey: null },
+  { href: '/soldiers',   label: 'כוח אדם',   icon: Users,          permKey: 'nav:soldiers' },
+  { href: '/attendance', label: 'נוכחות',     icon: CalendarCheck,  permKey: 'nav:attendance' },
+  { href: '/tracking',   label: 'מעקבים',     icon: ClipboardList,  permKey: 'nav:tracking' },
+  { href: '/equipment',  label: 'ציוד',       icon: Package,        permKey: 'nav:equipment' },
+  { href: '/melm',       label: 'מל"מ',       icon: RefreshCw,      permKey: 'nav:melm' },
+  { href: '/ops',        label: 'מבצעי',      icon: Target,         permKey: 'nav:ops' },
+  { href: '/admin',      label: 'ניהול',      icon: Settings,       permKey: 'nav:admin' },
+] as const
 
 interface SidebarProps {
   userName?: string | null
   userRole?: string | null
+  permissions: string[]
 }
 
-export default function Sidebar({ userName, userRole }: SidebarProps) {
+export default function Sidebar({ userName, userRole, permissions }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -37,6 +39,10 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
     await supabase.auth.signOut()
     router.push('/login')
   }
+
+  const visibleItems = NAV_ITEMS.filter(
+    item => !item.permKey || hasPermission(permissions, item.permKey)
+  )
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -55,7 +61,7 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {visibleItems.map(({ href, label, icon: Icon }) => {
           const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
           return (
             <Link
