@@ -27,14 +27,23 @@ export default async function GreenEyesHistoryPage() {
     supabase.from('departments').select('id, name').order('display_order'),
   ])
 
-  // Fetch performer names separately to avoid RLS breaking the main query
+  // Fetch performer names: get performed_by UUIDs, then look up names
   let performerMap: Record<number, string> = {}
-  const { data: withPerformer, error: perfError } = await supabase
+  const { data: reportPerformers } = await supabase
     .from('green_eyes_reports')
-    .select('id, performer:app_users(full_name)')
-  if (!perfError && withPerformer) {
-    withPerformer.forEach((r: any) => {
-      if (r.performer?.full_name) performerMap[r.id] = r.performer.full_name
+    .select('id, performed_by')
+  const userIds = [...new Set((reportPerformers ?? []).map((r: any) => r.performed_by).filter(Boolean))]
+  if (userIds.length > 0) {
+    const { data: users } = await supabase
+      .from('app_users')
+      .select('id, full_name')
+      .in('id', userIds)
+    const userNameMap: Record<string, string> = {}
+    ;(users ?? []).forEach((u: any) => { userNameMap[u.id] = u.full_name })
+    ;(reportPerformers ?? []).forEach((r: any) => {
+      if (r.performed_by && userNameMap[r.performed_by]) {
+        performerMap[r.id] = userNameMap[r.performed_by]
+      }
     })
   }
 
