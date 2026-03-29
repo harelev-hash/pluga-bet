@@ -293,12 +293,14 @@ export default function EquipmentReport({ soldiers, departments, assignments, st
                                           className="w-full border border-slate-200 rounded px-2 py-1 text-xs mb-1.5 focus:outline-none focus:ring-1 focus:ring-blue-300 bg-white"
                                         />
                                         <div className="flex flex-wrap gap-1">
-                                          <button
-                                            onClick={() => updateStorage(a.id, null, null, null, null)}
-                                            className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${!storage ? 'bg-slate-600 text-white border-slate-600' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
-                                          >
-                                            אצל החייל
-                                          </button>
+                                          {storage && (
+                                            <button
+                                              onClick={() => updateStorage(a.id, null, null, null, null)}
+                                              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                                            >
+                                              <X className="w-3 h-3" /> נקה
+                                            </button>
+                                          )}
                                           {filteredLocations.map(loc => (
                                             <button
                                               key={loc.id}
