@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Package, PenLine, LayoutList, Settings, ClipboardCheck, FileSpreadsheet, UserCheck, BarChart2, ScanSearch, Eye } from 'lucide-react'
+import { Package, PenLine, LayoutList, Settings, FileSpreadsheet, UserCheck, BarChart2, ScanSearch, Eye } from 'lucide-react'
 
 function ConditionBadge({ condition }: { condition: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -82,21 +82,16 @@ export default async function EquipmentPage() {
       {/* ניהול */}
       <div>
         <p className="text-xs font-semibold text-slate-400 mb-2 px-0.5">ניהול</p>
-        <div className="grid grid-cols-3 gap-3">
-          <Link href="/equipment/admin?tab=types" className="bg-slate-700 hover:bg-slate-800 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
+        <div className="grid grid-cols-2 gap-3">
+          <Link href="/equipment/admin" className="bg-slate-700 hover:bg-slate-800 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
             <Settings className="w-5 h-5" />
-            <span className="font-semibold text-sm">סוגי ציוד</span>
-            <span className="text-xs text-slate-300">קטגוריות ובעלות</span>
-          </Link>
-          <Link href="/equipment/admin?tab=templates" className="bg-slate-700 hover:bg-slate-800 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
-            <ClipboardCheck className="w-5 h-5" />
-            <span className="font-semibold text-sm">תבניות אפיון</span>
-            <span className="text-xs text-slate-300">לוחם, מטול, נגב...</span>
+            <span className="font-semibold text-sm">ניהול הגדרות ציוד</span>
+            <span className="text-xs text-slate-300">מקומות אפסון, סוגי ציוד, תבניות אפיון</span>
           </Link>
           <Link href="/equipment/import-kits" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
             <FileSpreadsheet className="w-5 h-5" />
-            <span className="font-semibold text-sm">ייבוא תיקי לוחם</span>
-            <span className="text-xs text-indigo-100">ייבוא מאקסל → מיועד</span>
+            <span className="font-semibold text-sm">ייבוא מקובץ אקסל</span>
+            <span className="text-xs text-indigo-100">ייבוא תיקי לוחם</span>
           </Link>
         </div>
       </div>
