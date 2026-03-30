@@ -17,7 +17,7 @@ export default async function EquipmentPage() {
   await requirePermission('nav:equipment')
   const supabase = await createClient()
 
-  const [{ data: assignments }, { data: types }] = await Promise.all([
+  const [{ data: assignments }, { data: types }, { count: activeCount }] = await Promise.all([
     supabase
       .from('equipment_assignments')
       .select('id, condition_in, attribute, quantity, signed_at, soldier:soldiers!soldier_id(id, full_name, rank), type:equipment_types(name), item:equipment_items(serial_number, type:equipment_types(name))')
@@ -25,9 +25,10 @@ export default async function EquipmentPage() {
       .order('signed_at', { ascending: false })
       .limit(20),
     supabase.from('equipment_types').select('id'),
+    supabase.from('equipment_assignments').select('*', { count: 'exact', head: true }).eq('status', 'active'),
   ])
 
-  const totalAssigned = assignments?.length ?? 0
+  const totalAssigned = activeCount ?? 0
   const wornCount = assignments?.filter((a: any) => a.condition_in === 'worn' || a.condition_in === 'damaged').length ?? 0
 
   return (
@@ -106,7 +107,7 @@ export default async function EquipmentPage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
           <p className="text-2xl font-bold text-blue-600">{totalAssigned}</p>
-          <p className="text-xs text-slate-500 mt-1">חתמות פעילות</p>
+          <p className="text-xs text-slate-500 mt-1">פריטים מוחתמים</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
           <p className="text-2xl font-bold text-slate-800">{types?.length ?? 0}</p>

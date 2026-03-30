@@ -166,6 +166,81 @@ export default function TypesAdmin({ types }: Props) {
         </div>
       )}
 
+      {/* New category being created (not yet in DB) */}
+      {addingToCat && !categories.includes(addingToCat) && (
+        <div className="bg-white rounded-xl shadow-sm border border-green-200 overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3 bg-green-50">
+            <FolderOpen className="w-4 h-4 text-green-600 shrink-0" />
+            <span className="font-semibold text-slate-700 flex-1">{addingToCat}</span>
+            <span className="text-xs text-green-600 font-medium">קטגוריה חדשה — הוסף פריט ראשון</span>
+            <button onClick={() => setAddingToCat(null)} className="text-slate-400 hover:text-slate-600 p-1">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="border-t border-green-100 px-4 py-3 bg-green-50/50 flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-500">שם פריט</label>
+              <input
+                autoFocus
+                value={newItemForm.name}
+                onChange={e => setNewItemForm(f => ({ ...f, name: e.target.value }))}
+                onKeyDown={e => { if (e.key === 'Enter') addItem(addingToCat); if (e.key === 'Escape') setAddingToCat(null) }}
+                placeholder="שם הפריט"
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-green-300"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-500">בעלות</label>
+              <select
+                value={newItemForm.ownership}
+                onChange={e => setNewItemForm(f => ({ ...f, ownership: e.target.value as EquipmentOwnership }))}
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+              >
+                <option value="personal">אישי</option>
+                <option value="platoon">פלוגתי</option>
+                <option value="battalion">גדודי</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-500">יחידה</label>
+              <input
+                value={newItemForm.unit}
+                onChange={e => setNewItemForm(f => ({ ...f, unit: e.target.value }))}
+                placeholder="יח'"
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm w-16 focus:outline-none focus:ring-2 focus:ring-green-300"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-500">מס' ייחודי?</label>
+              <select
+                value={newItemForm.is_serialized ? '1' : '0'}
+                onChange={e => setNewItemForm(f => ({ ...f, is_serialized: e.target.value === '1' }))}
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+              >
+                <option value="0">לא</option>
+                <option value="1">כן</option>
+              </select>
+            </div>
+            <div className="flex gap-2 items-end">
+              <button
+                onClick={() => addItem(addingToCat)}
+                disabled={isPending}
+                className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+              >
+                <Check className="w-3.5 h-3.5" /> הוסף
+              </button>
+              <button
+                onClick={() => { setAddingToCat(null); setError('') }}
+                className="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-200 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" /> ביטול
+              </button>
+            </div>
+            {error && <p className="text-xs text-red-600 w-full">{error}</p>}
+          </div>
+        </div>
+      )}
+
       {/* Categories */}
       {categories.map(cat => {
         const catItems = types.filter(t => t.category === cat)
