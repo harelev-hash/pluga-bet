@@ -16,8 +16,9 @@ export default async function SoldierPage({ params }: Props) {
   const isNew = id === 'new'
   const supabase = await createClient()
 
-  const [{ data: departments }, soldierResult] = await Promise.all([
+  const [{ data: departments }, { data: certTypes }, soldierResult] = await Promise.all([
     supabase.from('departments').select('*').order('display_order'),
+    supabase.from('certification_types').select('name').eq('is_active', true).order('display_order').order('name'),
     isNew
       ? { data: null, error: null }
       : supabase
@@ -26,6 +27,7 @@ export default async function SoldierPage({ params }: Props) {
           .eq('id', parseInt(id))
           .single(),
   ])
+  const certificationOptions = (certTypes ?? []).map((c: any) => c.name)
 
   if (!isNew && soldierResult.error) notFound()
   const soldier = soldierResult.data
@@ -81,6 +83,7 @@ export default async function SoldierPage({ params }: Props) {
         soldier={soldier}
         departments={departments ?? []}
         isNew={isNew}
+        certificationOptions={certificationOptions}
       />
     </div>
   )

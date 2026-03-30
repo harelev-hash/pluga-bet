@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { RANK_OPTIONS, CERTIFICATION_OPTIONS } from '@/lib/utils'
+import { RANK_OPTIONS } from '@/lib/utils'
 import type { Department, Soldier } from '@/lib/types/database'
 import { Save, Trash2, X, Plus } from 'lucide-react'
 
@@ -11,9 +11,10 @@ interface Props {
   soldier: Soldier | null
   departments: Department[]
   isNew: boolean
+  certificationOptions: string[]
 }
 
-export default function SoldierForm({ soldier, departments, isNew }: Props) {
+export default function SoldierForm({ soldier, departments, isNew, certificationOptions }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -177,7 +178,7 @@ export default function SoldierForm({ soldier, departments, isNew }: Props) {
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
         <h2 className="font-semibold text-slate-700 mb-4">הסמכות</h2>
         <div className="flex flex-wrap gap-2">
-          {CERTIFICATION_OPTIONS.map(cert => (
+          {certificationOptions.map(cert => (
             <button
               key={cert}
               type="button"
