@@ -10,11 +10,10 @@ export default async function SoldiersSettingsPage() {
   await requirePermission('soldiers:edit')
   const supabase = await createClient()
 
-  const { data: certTypes } = await supabase
-    .from('certification_types')
-    .select('*')
-    .order('display_order')
-    .order('name')
+  const [{ data: certTypes }, { data: positions }] = await Promise.all([
+    supabase.from('certification_types').select('*').order('display_order').order('name'),
+    supabase.from('duty_positions').select('id, name').eq('is_active', true).order('display_order').order('name'),
+  ])
 
   return (
     <div className="max-w-2xl mx-auto space-y-5" dir="rtl">
@@ -33,9 +32,10 @@ export default async function SoldiersSettingsPage() {
         <h2 className="font-semibold text-slate-700 mb-1">סוגי הסמכות</h2>
         <p className="text-slate-500 text-sm mb-4">
           ניהול רשימת ההסמכות הזמינות בטפסי החיילים.
-          הסתרת הסמכה מסירה אותה מהטפסים אך לא ממחיקה אותה מחיילים קיימים.
+          ניתן לקשר כל הסמכה לעמדת שיבוץ כדי לראות את הקשר ביניהן.
+          שינוי שם הסמכה יעדכן אוטומטית את כל החיילים שקיבלו אותה.
         </p>
-        <CertTypesManager initial={certTypes ?? []} />
+        <CertTypesManager initial={certTypes ?? []} positions={positions ?? []} />
       </div>
     </div>
   )
