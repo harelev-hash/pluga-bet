@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/auth/server'
 import Link from 'next/link'
-import { Package, PenLine, LayoutList, Settings, FileSpreadsheet, UserCheck, BarChart2, ScanSearch, Eye } from 'lucide-react'
+import { Package, PenLine, LayoutList, Settings, FileSpreadsheet, UserCheck, BarChart2, ScanSearch, Eye, ClipboardCheck } from 'lucide-react'
 
 function ConditionBadge({ condition }: { condition: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -77,6 +77,11 @@ export default async function EquipmentPage() {
             <Eye className="w-5 h-5" />
             <span className="font-semibold text-sm">ירוק בעיניים</span>
             <span className="text-xs text-green-100">בדיקת ציוד יומית</span>
+          </Link>
+          <Link href="/equipment/tracking" className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl p-4 flex flex-col gap-2 transition-colors shadow-sm">
+            <ClipboardCheck className="w-5 h-5" />
+            <span className="font-semibold text-sm">מעקב ציוד יומי</span>
+            <span className="text-xs text-amber-100">בדיקה לפי פריט / תבנית</span>
           </Link>
         </div>
       </div>
