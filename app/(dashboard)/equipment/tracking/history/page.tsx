@@ -17,11 +17,9 @@ export default async function TrackingHistoryPage() {
         id, report_date, created_at, template_ids, performed_by,
         checks:equipment_tracking_checks(
           id, is_present, assignment_id,
+          snapshot_soldier_name, snapshot_storage_name,
           assignment:equipment_assignments(
             id, attribute, quantity,
-            storage_location:storage_locations(name),
-            storage_soldier:soldiers!storage_soldier_id(full_name),
-            soldier:soldiers!soldier_id(full_name),
             item:equipment_items(serial_number, type:equipment_types(name)),
             type:equipment_types(name)
           )

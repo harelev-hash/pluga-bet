@@ -8,11 +8,10 @@ interface TrackingCheck {
   id: number
   is_present: boolean
   assignment_id: number
+  snapshot_soldier_name: string | null
+  snapshot_storage_name: string | null
   assignment: {
     id: number; attribute: string | null; quantity: number
-    storage_location: { name: string } | null
-    storage_soldier: { full_name: string } | null
-    soldier: { full_name: string } | null
     item: { serial_number: string | null; type: { name: string } | null } | null
     type: { name: string } | null
   } | null
@@ -43,8 +42,8 @@ const getDetail = (c: TrackingCheck) => {
   return parts.join(' ')
 }
 
-const getStorage = (c: TrackingCheck) =>
-  c.assignment?.storage_location?.name ?? c.assignment?.storage_soldier?.full_name ?? null
+const getStorage = (c: TrackingCheck) => c.snapshot_storage_name ?? null
+const getSoldier = (c: TrackingCheck) => c.snapshot_soldier_name ?? null
 
 function printReport(report: Report, templateMap: Record<number, string>) {
   const date = formatDate(report.report_date)
@@ -57,7 +56,7 @@ function printReport(report: Report, templateMap: Record<number, string>) {
   const rows = report.checks.map(c => {
     const typeName = getTypeName(c)
     const detail = getDetail(c)
-    const soldier = c.assignment?.soldier?.full_name ?? '—'
+    const soldier = getSoldier(c) ?? '—'
     const storage = getStorage(c) ?? '—'
     return `<tr style="background:${c.is_present ? '#f0fff4' : '#fff'}">
       <td style="padding:4px 8px;border:1px solid #ddd;font-weight:500">${typeName}</td>
@@ -110,7 +109,7 @@ function whatsappReport(report: Report, templateMap: Record<number, string>) {
     text += `${missing.length === 0 ? '✅' : '⚠️'} ${typeName} — ${present.length}/${checks.length}\n`
     missing.forEach(c => {
       const detail = getDetail(c)
-      const soldier = c.assignment?.soldier?.full_name
+      const soldier = getSoldier(c)
       text += `  חסר: ${detail || ''}${soldier ? ` (${soldier})` : ''}\n`
     })
   })
@@ -226,8 +225,8 @@ export default function TrackingHistory({ reports: initialReports, templateMap }
                           <tr key={c.id} className={c.is_present ? 'bg-amber-50/30' : ''}>
                             <td className="px-4 py-2 font-medium text-slate-800 text-xs">{getTypeName(c)}</td>
                             <td className="px-4 py-2 text-xs font-mono text-slate-500">{getDetail(c) || '—'}</td>
-                            <td className="px-4 py-2 text-xs text-slate-700">{c.assignment?.soldier?.full_name ?? '—'}</td>
-                            <td className="px-4 py-2 text-xs text-slate-500">{storage ?? '—'}</td>
+                            <td className="px-4 py-2 text-xs text-slate-700">{getSoldier(c) ?? '—'}</td>
+                            <td className="px-4 py-2 text-xs text-slate-500">{getStorage(c) ?? '—'}</td>
                             <td className="px-4 py-2 text-center">
                               <button
                                 onClick={() => toggleCheck(report.id, c.id, c.is_present)}

@@ -120,9 +120,16 @@ export default function TrackingClient({ templates, assignments, storageLocation
         .insert({ report_date: reportDate, template_ids: Array.from(selectedTemplateIds), performed_by: user?.id ?? null })
         .select('id').single()
       if (error || !report) return
-      const rows = filteredAssignments.map(a => ({
-        report_id: report.id, assignment_id: a.id, is_present: checks.get(a.id) ?? false,
-      }))
+      const rows = filteredAssignments.map(a => {
+        const storage = assignmentStorage.get(a.id)
+        return {
+          report_id: report.id,
+          assignment_id: a.id,
+          is_present: checks.get(a.id) ?? false,
+          snapshot_soldier_name: a.soldier?.full_name ?? null,
+          snapshot_storage_name: storage?.locationName ?? storage?.soldierName ?? null,
+        }
+      })
       if (rows.length) await supabase.from('equipment_tracking_checks').insert(rows)
       setSaved(true)
     })
