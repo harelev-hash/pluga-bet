@@ -3,9 +3,11 @@ import { getPermissions } from '@/lib/auth/server'
 import { hasPermission } from '@/lib/permissions'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, LayoutList } from 'lucide-react'
 import { todayISO, formatDate } from '@/lib/utils'
 import ScheduleGrid from './schedule-grid'
+
+export const dynamic = 'force-dynamic'
 
 interface Props { searchParams: Promise<{ date?: string }> }
 
@@ -104,7 +106,7 @@ export default async function SchedulePage({ searchParams }: Props) {
       </div>
 
       {/* Date picker */}
-      <div className="bg-white rounded-xl border border-slate-100 p-4">
+      <div className="bg-white rounded-xl border border-slate-100 p-4 flex items-center gap-3 flex-wrap">
         <form className="flex gap-3">
           <input
             type="date"
@@ -119,6 +121,13 @@ export default async function SchedulePage({ searchParams }: Props) {
             טען
           </button>
         </form>
+        <Link
+          href={`/ops/schedule/view?date=${date}`}
+          className="flex items-center gap-1.5 text-sm text-slate-600 border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+        >
+          <LayoutList className="w-4 h-4" />
+          תצוגת טבלה
+        </Link>
       </div>
 
       <ScheduleGrid
