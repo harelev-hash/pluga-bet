@@ -61,8 +61,14 @@ const formatDate = (d: string | null) =>
 const formatDateTime = (d: string | null) =>
   d ? new Date(d).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
 
-const formatReqDate = (requestDate: string | null, createdAt: string) =>
-  requestDate ? formatDate(requestDate) : formatDateTime(createdAt)
+const formatTime = (d: string) =>
+  new Date(d).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+// Show date (from request_date if set, else created_at) + time always from created_at
+const formatReqDate = (requestDate: string | null, createdAt: string) => {
+  const date = requestDate ? formatDate(requestDate) : formatDateTime(createdAt)
+  return requestDate ? `${date} ${formatTime(createdAt)}` : date
+}
 
 export default function HandleDashboard({ requests, departments }: Props) {
   const [filterDept, setFilterDept] = useState('')

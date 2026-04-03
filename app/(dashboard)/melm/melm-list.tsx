@@ -37,9 +37,13 @@ const formatDate = (d: string | null) =>
 const formatDateTime = (d: string | null) =>
   d ? new Date(d).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
 
-// For request display: use date-only if request_date is set, else show full datetime from created_at
-const formatReqDate = (requestDate: string | null, createdAt: string) =>
-  requestDate ? formatDate(requestDate) : formatDateTime(createdAt)
+const formatTime = (d: string) =>
+  new Date(d).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+const formatReqDate = (requestDate: string | null, createdAt: string) => {
+  const date = requestDate ? formatDate(requestDate) : formatDateTime(createdAt)
+  return requestDate ? `${date} ${formatTime(createdAt)}` : date
+}
 
 export default function MelmList({ requests, departments }: Props) {
   // Default: show open (non-closed)
