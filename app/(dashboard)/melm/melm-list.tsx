@@ -32,7 +32,14 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const formatDate = (d: string | null) =>
-  d ? new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+  d ? new Date(d + 'T12:00:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+
+const formatDateTime = (d: string | null) =>
+  d ? new Date(d).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
+
+// For request display: use date-only if request_date is set, else show full datetime from created_at
+const formatReqDate = (requestDate: string | null, createdAt: string) =>
+  requestDate ? formatDate(requestDate) : formatDateTime(createdAt)
 
 export default function MelmList({ requests, departments }: Props) {
   // Default: show open (non-closed)
@@ -121,7 +128,7 @@ export default function MelmList({ requests, departments }: Props) {
                 <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
                   <span>{r.department?.name ?? 'ללא מחלקה'}</span>
                   <span>·</span>
-                  <span>{formatDate(r.request_date ?? r.created_at)}</span>
+                  <span>{formatReqDate(r.request_date, r.created_at)}</span>
                   <span>·</span>
                   <span>{r.itemCount} סעיפים</span>
                   {r.status === 'closed' && (
@@ -129,7 +136,7 @@ export default function MelmList({ requests, departments }: Props) {
                       <span>·</span>
                       <span className="flex items-center gap-1">
                         <Lock className="w-3 h-3" />
-                        נסגר{r.closed_at ? ` ${formatDate(r.closed_at)}` : ''}
+                        נסגר{r.closed_at ? ` ${formatDateTime(r.closed_at)}` : ''}
                         {r.closedByName ? ` ע"י ${r.closedByName}` : ''}
                       </span>
                     </>

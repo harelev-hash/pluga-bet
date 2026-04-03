@@ -56,7 +56,13 @@ const RESAP_CONFIG: Record<string, { icon: React.ReactNode; cls: string; label: 
 }
 
 const formatDate = (d: string | null) =>
-  d ? new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+  d ? new Date(d + 'T12:00:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+
+const formatDateTime = (d: string | null) =>
+  d ? new Date(d).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
+
+const formatReqDate = (requestDate: string | null, createdAt: string) =>
+  requestDate ? formatDate(requestDate) : formatDateTime(createdAt)
 
 export default function HandleDashboard({ requests, departments }: Props) {
   const [filterDept, setFilterDept] = useState('')
@@ -149,7 +155,7 @@ export default function HandleDashboard({ requests, departments }: Props) {
                 <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
                   <span>{r.department?.name ?? 'ללא מחלקה'}</span>
                   <span>·</span>
-                  <span>{formatDate(r.request_date ?? r.created_at)}</span>
+                  <span>{formatReqDate(r.request_date, r.created_at)}</span>
                   <span>·</span>
                   <span>{r.items.length} סעיפים</span>
                   {isClosed && (
@@ -157,7 +163,7 @@ export default function HandleDashboard({ requests, departments }: Props) {
                       <span>·</span>
                       <span className="flex items-center gap-1 text-slate-400">
                         <Lock className="w-3 h-3" />
-                        נסגר{r.closed_at ? ` ${formatDate(r.closed_at)}` : ''}
+                        נסגר{r.closed_at ? ` ${formatDateTime(r.closed_at)}` : ''}
                         {r.closedByName ? ` ע"י ${r.closedByName}` : ''}
                       </span>
                     </>
@@ -216,10 +222,10 @@ export default function HandleDashboard({ requests, departments }: Props) {
                             {/* Performer attribution */}
                             <td className="px-4 py-2 text-xs text-slate-400 max-w-[140px]">
                               {item.performerName && item.resap_status !== 'pending' && (
-                                <span title={item.resap_performed_at ? formatDate(item.resap_performed_at) : ''}>
+                                <span>
                                   ע&quot;י {item.performerName}
                                   {item.resap_performed_at && (
-                                    <span className="text-slate-300 mr-1">· {formatDate(item.resap_performed_at)}</span>
+                                    <span className="text-slate-300 mr-1">· {formatDateTime(item.resap_performed_at)}</span>
                                   )}
                                 </span>
                               )}

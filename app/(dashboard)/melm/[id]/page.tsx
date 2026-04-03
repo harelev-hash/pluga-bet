@@ -4,7 +4,7 @@ import { hasPermission } from '@/lib/permissions'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatDateTime } from '@/lib/utils'
 import HandleClient from './handle-client'
 
 interface Props { params: Promise<{ id: string }> }
@@ -75,12 +75,12 @@ export default async function MelmHandlePage({ params }: Props) {
           <p className="text-slate-500 text-sm mt-0.5">
             {(request.department as any)?.name ?? ''}
             {' · '}
-            {formatDate(request.request_date ?? request.created_at)}
+            {request.request_date ? formatDate(request.request_date) : formatDateTime(request.created_at)}
             {submitterName && <span> · הוגש ע&quot;י {submitterName}</span>}
           </p>
           {request.closed_at && (
             <p className="text-xs text-slate-400 mt-0.5">
-              נסגר {formatDate(request.closed_at)}
+              נסגר {formatDateTime(request.closed_at)}
               {closedByName && <> ע&quot;י {closedByName}</>}
             </p>
           )}

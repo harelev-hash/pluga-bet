@@ -56,7 +56,10 @@ const RESAP_CONFIG: Record<string, { label: string; icon: React.ReactNode; cls: 
 }
 
 const formatDate = (d: string | null) =>
-  d ? new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+  d ? new Date(d + 'T12:00:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+
+const formatDateTime = (d: string | null) =>
+  d ? new Date(d).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
 
 function itemDescription(item: MelmItem): string {
   const kind = item.item_kind ?? 'equipment'
@@ -76,7 +79,7 @@ function buildWhatsAppText(props: Props): string {
     `מחלקה: ${props.deptName ?? '—'} | תאריך: ${formatDate(props.requestDate)}`,
     `סטטוס: ${STATUS_LABELS[props.status] ?? props.status}`,
     props.submitterName ? `הוגש ע"י: ${props.submitterName}` : '',
-    props.closedByName ? `נסגר ע"י: ${props.closedByName} (${formatDate(props.closedAt)})` : '',
+    props.closedByName ? `נסגר ע"י: ${props.closedByName} (${formatDateTime(props.closedAt)})` : '',
     '',
   ].filter(l => l !== undefined && !(l === '' && lines?.length === 0))
 
@@ -162,7 +165,7 @@ export default function ViewClient(props: Props) {
             {closedAt && (
               <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
                 <Lock className="w-3 h-3" />
-                נסגר {formatDate(closedAt)}{closedByName ? ` ע"י ${closedByName}` : ''}
+                נסגר {formatDateTime(closedAt)}{closedByName ? ` ע"י ${closedByName}` : ''}
               </p>
             )}
           </div>
@@ -209,7 +212,7 @@ export default function ViewClient(props: Props) {
                   {item.performerName && item.resap_status !== 'pending' && (
                     <p className="text-xs text-slate-400">
                       טופל ע&quot;י {item.performerName}
-                      {item.resap_performed_at && <> · {formatDate(item.resap_performed_at)}</>}
+                      {item.resap_performed_at && <> · {formatDateTime(item.resap_performed_at)}</>}
                     </p>
                   )}
                   {item.resap_notes && (
