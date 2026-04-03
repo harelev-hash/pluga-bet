@@ -151,7 +151,7 @@ export default async function EquipmentPage() {
                     </td>
                     <td className="px-4 py-3"><ConditionBadge condition={a.condition_in} /></td>
                     <td className="px-4 py-3 text-slate-400 text-xs">
-                      {new Date(a.signed_at).toLocaleDateString('he-IL')}
+                      {new Date(a.signed_at).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
                     </td>
                   </tr>
                 )

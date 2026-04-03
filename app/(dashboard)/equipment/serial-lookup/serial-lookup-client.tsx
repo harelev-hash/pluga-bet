@@ -47,7 +47,7 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 }
 
 const formatDate = (d: string | null) =>
-  d ? new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+  d ? new Date(d).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
 
 export default function SerialLookupClient({ items }: Props) {
   const [query, setQuery] = useState('')

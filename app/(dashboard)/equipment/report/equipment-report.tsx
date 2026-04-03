@@ -129,7 +129,7 @@ export default function EquipmentReport({ soldiers, departments, assignments, st
     a.item?.serial_number ?? null
 
   const formatDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+    d ? new Date(d).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
 
   return (
     <div className="space-y-4" dir="rtl">
