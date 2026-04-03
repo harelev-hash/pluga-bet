@@ -12,18 +12,19 @@ export const dynamic = 'force-dynamic'
 export default async function SoldiersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; dept?: string; active?: string; cert?: string; city?: string }>
+  searchParams: Promise<{ q?: string; dept?: string; active?: string; cert?: string; qual?: string; role?: string; city?: string }>
 }) {
   const permissions = await getPermissions()
   if (!hasPermission(permissions, 'nav:soldiers')) redirect('/')
   const canEdit = hasPermission(permissions, 'soldiers:edit')
 
-  const { q, dept, active, cert, city } = await searchParams
+  const { q, dept, active, cert, qual, role, city } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: departments }, { data: certTypes }, soldiersResult, { data: allSoldiers }] = await Promise.all([
+  const [{ data: departments }, { data: certTypes }, { data: qualTypes }, soldiersResult, { data: allSoldiers }] = await Promise.all([
     supabase.from('departments').select('*').order('display_order'),
     supabase.from('certification_types').select('name').eq('is_active', true).order('display_order').order('name'),
+    supabase.from('qualification_types').select('name').eq('is_active', true).order('display_order').order('name'),
     (() => {
       let query = supabase
         .from('soldiers')
@@ -34,6 +35,8 @@ export default async function SoldiersPage({
       if (dept) query = query.eq('department_id', parseInt(dept))
       if (active !== 'all') query = query.eq('is_active', true)
       if (cert) query = query.contains('certifications', [cert])
+      if (qual) query = query.contains('qualifications', [qual])
+      if (role) query = query.ilike('role_in_unit', `%${role}%`)
       if (city) query = query.ilike('city', `%${city}%`)
 
       return query
@@ -42,7 +45,7 @@ export default async function SoldiersPage({
   ])
 
   const soldiers = soldiersResult.data ?? []
-  const hasFilters = !!(q || dept || cert || city || active)
+  const hasFilters = !!(q || dept || cert || qual || role || city || active)
 
   // Stats: per-department active/total counts (always from full data, not filtered)
   const deptStatsMap: Record<string, { active: number; total: number }> = {}
@@ -58,12 +61,14 @@ export default async function SoldiersPage({
 
   // Label for export
   const filterParts: string[] = []
-  if (cert) filterParts.push(`הסמכה: ${cert}`)
-  if (city) filterParts.push(`עיר: ${city}`)
   if (dept && departments) {
     const deptName = departments.find((d: any) => String(d.id) === dept)?.name
     if (deptName) filterParts.push(deptName)
   }
+  if (role) filterParts.push(`תפקיד: ${role}`)
+  if (cert) filterParts.push(`תפקיד בסבב: ${cert}`)
+  if (qual) filterParts.push(`הסמכה: ${qual}`)
+  if (city) filterParts.push(`עיר: ${city}`)
   const filterLabel = filterParts.length > 0 ? filterParts.join(', ') : undefined
 
   return (
@@ -145,14 +150,30 @@ export default async function SoldiersPage({
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
+          <input
+            name="role"
+            defaultValue={role}
+            placeholder="תפקיד..."
+            className="w-32 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
           <select
             name="cert"
             defaultValue={cert ?? ''}
             className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">כל ההסמכות</option>
+            <option value="">תפקיד בסבב...</option>
             {certTypes?.map((c: any) => (
               <option key={c.name} value={c.name}>{c.name}</option>
+            ))}
+          </select>
+          <select
+            name="qual"
+            defaultValue={qual ?? ''}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">הסמכה...</option>
+            {qualTypes?.map((q: any) => (
+              <option key={q.name} value={q.name}>{q.name}</option>
             ))}
           </select>
           <input
