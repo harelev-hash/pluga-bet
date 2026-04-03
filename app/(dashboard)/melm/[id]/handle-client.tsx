@@ -60,6 +60,9 @@ const KIND_LABEL: Record<string, string> = {
 const formatDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null
 
+const formatDateTime = (d: string | null) =>
+  d ? `${formatDate(d)} ${new Date(d).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false })}` : null
+
 export default function HandleClient({ requestId, initialStatus, items: initialItems, closedByName, closedAt, canHandle, canClose }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -175,7 +178,7 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
         <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-slate-500">
           <Lock className="w-4 h-4 shrink-0" />
           <span>
-            מל&quot;מ זה נסגר{formatDate(closedAt) ? ` ב-${formatDate(closedAt)}` : ''}
+            מל&quot;מ זה נסגר{formatDateTime(closedAt) ? ` ב-${formatDateTime(closedAt)}` : ''}
             {closedByName ? ` ע&quot;י ${closedByName}` : ''}
           </span>
         </div>
@@ -220,7 +223,7 @@ export default function HandleClient({ requestId, initialStatus, items: initialI
                 {item.performerName && item.resap_status !== 'pending' && (
                   <p className="text-xs text-slate-300 mt-0.5">
                     טופל ע&quot;י {item.performerName}
-                    {item.resap_performed_at && <> · {formatDate(item.resap_performed_at)}</>}
+                    {item.resap_performed_at && <> · {formatDateTime(item.resap_performed_at)}</>}
                   </p>
                 )}
               </div>

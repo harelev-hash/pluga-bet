@@ -21,7 +21,7 @@ export default async function SoldiersPage({
   const { q, dept, active, cert, city } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: departments }, { data: certTypes }, soldiersResult] = await Promise.all([
+  const [{ data: departments }, { data: certTypes }, soldiersResult, { data: allSoldiers }] = await Promise.all([
     supabase.from('departments').select('*').order('display_order'),
     supabase.from('certification_types').select('name').eq('is_active', true).order('display_order').order('name'),
     (() => {
@@ -38,20 +38,23 @@ export default async function SoldiersPage({
 
       return query
     })(),
+    supabase.from('soldiers').select('department_id, is_active, department:departments(id,name)'),
   ])
 
   const soldiers = soldiersResult.data ?? []
   const hasFilters = !!(q || dept || cert || city || active)
 
-  // Stats: soldier count by department (only when no filters applied)
-  const deptCounts: Record<string, number> = {}
-  if (!hasFilters) {
-    for (const s of soldiers) {
-      const name = (s as any).department?.name ?? 'ללא מחלקה'
-      deptCounts[name] = (deptCounts[name] ?? 0) + 1
-    }
+  // Stats: per-department active/total counts (always from full data, not filtered)
+  const deptStatsMap: Record<string, { active: number; total: number }> = {}
+  for (const s of allSoldiers ?? []) {
+    const name = (s as any).department?.name ?? 'ללא מחלקה'
+    if (!deptStatsMap[name]) deptStatsMap[name] = { active: 0, total: 0 }
+    deptStatsMap[name].total++
+    if (s.is_active) deptStatsMap[name].active++
   }
-  const deptStats = Object.entries(deptCounts).sort((a, b) => b[1] - a[1])
+  const deptStats = Object.entries(deptStatsMap).sort((a, b) => b[1].total - a[1].total)
+  const totalActive = (allSoldiers ?? []).filter(s => s.is_active).length
+  const totalAll = allSoldiers?.length ?? 0
 
   // Label for export
   const filterParts: string[] = []
@@ -98,15 +101,25 @@ export default async function SoldiersPage({
         </div>
       </div>
 
-      {/* Stats by department (only when unfiltered) */}
-      {deptStats.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:hidden">
-          {deptStats.slice(0, 4).map(([name, count]) => (
+      {/* Stats by department + total platoon */}
+      {deptStats.length > 0 && !hasFilters && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:hidden">
+          {deptStats.map(([name, { active, total }]) => (
             <div key={name} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-              <p className="text-2xl font-bold text-blue-600">{count}</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {active}
+                <span className="text-sm font-normal text-slate-400"> / {total}</span>
+              </p>
               <p className="text-xs text-slate-500 mt-1 truncate" title={name}>{name}</p>
             </div>
           ))}
+          <div className="bg-blue-50 rounded-xl p-4 shadow-sm border border-blue-100">
+            <p className="text-2xl font-bold text-blue-700">
+              {totalActive}
+              <span className="text-sm font-normal text-blue-400"> / {totalAll}</span>
+            </p>
+            <p className="text-xs text-blue-600 mt-1 font-medium">כל הפלוגה</p>
+          </div>
         </div>
       )}
 

@@ -40,6 +40,9 @@ const itemLabel = (c: Check) => {
 const formatDate = (d: string) =>
   new Date(d + 'T12:00:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
+const formatTime = (d: string) =>
+  new Date(d).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false })
+
 function bySoldier(checks: Check[]) {
   const map = new Map<number, { name: string; role: string | null; checks: Check[] }>()
   checks.forEach(c => {
@@ -193,6 +196,7 @@ export default function GreenEyesHistory({ reports: initialReports, departments 
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-800 text-sm">
                       {formatDate(report.report_date)}
+                      <span className="text-slate-400 font-normal text-xs mr-1">{formatTime(report.created_at)}</span>
                       {report.department && <span className="text-slate-500 font-normal mr-2">— {report.department.name}</span>}
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">

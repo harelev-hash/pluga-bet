@@ -31,6 +31,9 @@ interface Props { reports: Report[]; templateMap: Record<number, string> }
 const formatDate = (d: string) =>
   new Date(d + 'T12:00:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
+const formatTime = (d: string) =>
+  new Date(d).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false })
+
 const getTypeName = (c: TrackingCheck) =>
   c.assignment?.item?.type?.name ?? c.assignment?.type?.name ?? '—'
 
@@ -183,7 +186,10 @@ export default function TrackingHistory({ reports: initialReports, templateMap }
                 <button onClick={() => toggle(report.id)} className="flex items-center gap-3 flex-1 text-right min-w-0">
                   <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${allOk ? 'bg-amber-500' : 'bg-red-400'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-800 text-sm">{formatDate(report.report_date)}</p>
+                    <p className="font-semibold text-slate-800 text-sm">
+                      {formatDate(report.report_date)}
+                      <span className="text-slate-400 font-normal text-xs mr-1">{formatTime(report.created_at)}</span>
+                    </p>
                     <p className="text-xs text-slate-400 mt-0.5 truncate">
                       {templateNames} · {presentCount}/{report.checks.length} פריטים
                       {!allOk && <span className="text-red-500"> · {report.checks.length - presentCount} חסרים</span>}

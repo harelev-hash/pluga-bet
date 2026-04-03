@@ -12,9 +12,10 @@ interface Props {
   departments: Department[]
   isNew: boolean
   certificationOptions: string[]
+  qualificationOptions: string[]
 }
 
-export default function SoldierForm({ soldier, departments, isNew, certificationOptions }: Props) {
+export default function SoldierForm({ soldier, departments, isNew, certificationOptions, qualificationOptions }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -32,6 +33,7 @@ export default function SoldierForm({ soldier, departments, isNew, certification
     notes: soldier?.notes ?? '',
     is_active: soldier?.is_active ?? true,
     certifications: soldier?.certifications ?? [],
+    qualifications: (soldier as any)?.qualifications ?? [],
   })
 
   const toggleCert = (cert: string) => {
@@ -40,6 +42,15 @@ export default function SoldierForm({ soldier, departments, isNew, certification
       certifications: f.certifications.includes(cert)
         ? f.certifications.filter(c => c !== cert)
         : [...f.certifications, cert],
+    }))
+  }
+
+  const toggleQual = (qual: string) => {
+    setForm(f => ({
+      ...f,
+      qualifications: f.qualifications.includes(qual)
+        ? f.qualifications.filter(q => q !== qual)
+        : [...f.qualifications, qual],
     }))
   }
 
@@ -174,9 +185,9 @@ export default function SoldierForm({ soldier, departments, isNew, certification
         </div>
       </div>
 
-      {/* Certifications */}
+      {/* Rotation role (תפקיד בסבב) */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
-        <h2 className="font-semibold text-slate-700 mb-4">הסמכות</h2>
+        <h2 className="font-semibold text-slate-700 mb-4">תפקיד בסבב</h2>
         <div className="flex flex-wrap gap-2">
           {certificationOptions.map(cert => (
             <button
@@ -192,6 +203,30 @@ export default function SoldierForm({ soldier, departments, isNew, certification
               {form.certifications.includes(cert) ? '✓ ' : ''}{cert}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Qualifications (הסמכות) */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+        <h2 className="font-semibold text-slate-700 mb-4">הסמכות</h2>
+        <div className="flex flex-wrap gap-2">
+          {qualificationOptions.map(qual => (
+            <button
+              key={qual}
+              type="button"
+              onClick={() => toggleQual(qual)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                form.qualifications.includes(qual)
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {form.qualifications.includes(qual) ? '✓ ' : ''}{qual}
+            </button>
+          ))}
+          {qualificationOptions.length === 0 && (
+            <p className="text-slate-400 text-sm">אין הסמכות מוגדרות — הוסף מ<a href="/soldiers/settings" className="text-blue-500 underline">הגדרות</a></p>
+          )}
         </div>
       </div>
 

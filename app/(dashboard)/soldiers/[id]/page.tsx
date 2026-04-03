@@ -16,9 +16,10 @@ export default async function SoldierPage({ params }: Props) {
   const isNew = id === 'new'
   const supabase = await createClient()
 
-  const [{ data: departments }, { data: certTypes }, soldierResult] = await Promise.all([
+  const [{ data: departments }, { data: certTypes }, { data: qualTypes }, soldierResult] = await Promise.all([
     supabase.from('departments').select('*').order('display_order'),
     supabase.from('certification_types').select('name').eq('is_active', true).order('display_order').order('name'),
+    supabase.from('qualification_types').select('name').eq('is_active', true).order('display_order').order('name'),
     isNew
       ? { data: null, error: null }
       : supabase
@@ -28,6 +29,7 @@ export default async function SoldierPage({ params }: Props) {
           .single(),
   ])
   const certificationOptions = (certTypes ?? []).map((c: any) => c.name)
+  const qualificationOptions = (qualTypes ?? []).map((q: any) => q.name)
 
   if (!isNew && soldierResult.error) notFound()
   const soldier = soldierResult.data
@@ -73,7 +75,7 @@ export default async function SoldierPage({ params }: Props) {
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
             <p className="text-2xl font-bold text-purple-600">{soldier.certifications?.length ?? 0}</p>
-            <p className="text-xs text-slate-500 mt-1">הסמכות</p>
+            <p className="text-xs text-slate-500 mt-1">תפקידים בסבב</p>
           </div>
         </div>
       )}
@@ -84,6 +86,7 @@ export default async function SoldierPage({ params }: Props) {
         departments={departments ?? []}
         isNew={isNew}
         certificationOptions={certificationOptions}
+        qualificationOptions={qualificationOptions}
       />
     </div>
   )
